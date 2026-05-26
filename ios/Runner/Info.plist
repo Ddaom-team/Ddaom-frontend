@@ -57,6 +57,23 @@
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+	<!-- Google Sign-In iOS 설정 (Google Cloud Console iOS Client 발급 후 채울 것)
+	     필요값:
+	       - GIDClientID: iOS Client ID 전체 (예: 1234-abc.apps.googleusercontent.com)
+	       - CFBundleURLSchemes: REVERSED_CLIENT_ID (예: com.googleusercontent.apps.1234-abc) -->
+	<key>GIDClientID</key>
+	<string>YOUR_IOS_CLIENT_ID.apps.googleusercontent.com</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.YOUR_REVERSED_IOS_CLIENT_ID</string>
+			</array>
+		</dict>
+	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
