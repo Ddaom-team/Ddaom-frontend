@@ -62,7 +62,7 @@
 	       - GIDClientID: iOS Client ID 전체 (예: 1234-abc.apps.googleusercontent.com)
 	       - CFBundleURLSchemes: REVERSED_CLIENT_ID (예: com.googleusercontent.apps.1234-abc) -->
 	<key>GIDClientID</key>
-	<string>YOUR_IOS_CLIENT_ID.apps.googleusercontent.com</string>
+	<string>505282435869-g2i59ggms37vi6s0logeshet2kd8ff6p.apps.googleusercontent.com</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -70,7 +70,7 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.YOUR_REVERSED_IOS_CLIENT_ID</string>
+				<string>com.googleusercontent.apps.505282435869-g2i59ggms37vi6s0logeshet2kd8ff6p</string>
 			</array>
 		</dict>
 	</array>

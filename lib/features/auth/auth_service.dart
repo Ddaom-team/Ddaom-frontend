@@ -17,7 +17,7 @@ class AuthService {
   // 백엔드 idToken 검증의 audience로 쓰일 Web Client ID.
   // Google Cloud Console에서 OAuth Client(Web) 발급 후 교체.
   static const String _webClientId =
-      'YOUR_GOOGLE_WEB_CLIENT_ID.apps.googleusercontent.com';
+      '505282435869-e9l69k0s182bokeib91hu3l3mckojiiq.apps.googleusercontent.com';
 
   final ApiClient _api;
   final SecureStorage _storage;
