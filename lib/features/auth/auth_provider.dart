@@ -21,6 +21,14 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> bootstrap() async {
     _user = await _storage.readUser();
+    if (_user != null) {
+      try {
+        _user = await _service.fetchMe();
+      } catch (_) {
+        await _storage.clear();
+        _user = null;
+      }
+    }
     notifyListeners();
   }
 

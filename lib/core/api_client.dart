@@ -25,6 +25,14 @@ class ApiClient {
         }
         handler.next(options);
       },
+      onResponse: (response, handler) {
+        // 모든 응답이 { code, message, data } 형태이므로 data 필드만 추출
+        final body = response.data;
+        if (body is Map<String, dynamic> && body.containsKey('data')) {
+          response.data = body['data'];
+        }
+        handler.next(response);
+      },
       onError: (e, handler) async {
         if (e.response?.statusCode == 401) {
           await _storage.clear();
