@@ -28,7 +28,7 @@ class UserService {
 
       // 예상 필드 존재 여부 확인
       final data = res.data as Map<String, dynamic>;
-      for (final key in ['userId', 'email', 'nickname', 'profileImage']) {
+      for (final key in ['email', 'nickname', 'profileImage']) {
         debugPrint(
           '[getMeDebug] "$key": ${data.containsKey(key) ? data[key] : "❌ 없음"}',
         );

@@ -1,25 +1,21 @@
 class User {
-  final int id;
   final String email;
   final String name;
   final String? profileImageUrl;
 
   User({
-    required this.id,
     required this.email,
     required this.name,
     this.profileImageUrl,
   });
 
   factory User.fromJson(Map<String, dynamic> json) => User(
-        id: (json['userId'] ?? json['id']) as int,
         email: json['email'] as String,
         name: (json['nickname'] ?? json['name']) as String,
         profileImageUrl: (json['profileImage'] ?? json['profileImageUrl']) as String?,
       );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
         'email': email,
         'name': name,
         'profileImageUrl': profileImageUrl,
