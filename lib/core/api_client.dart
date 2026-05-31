@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import 'secure_storage.dart';
 
@@ -34,6 +35,10 @@ class ApiClient {
         handler.next(response);
       },
       onError: (e, handler) async {
+        final body = e.response?.data;
+        if (body is Map<String, dynamic>) {
+          debugPrint('[ApiClient] error code: ${body['code']}, message: ${body['message']}');
+        }
         if (e.response?.statusCode == 401) {
           await _storage.clear();
           onUnauthorized?.call();
