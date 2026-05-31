@@ -12,10 +12,10 @@ class User {
   });
 
   factory User.fromJson(Map<String, dynamic> json) => User(
-        id: json['id'] as int,
+        id: (json['userId'] ?? json['id']) as int,
         email: json['email'] as String,
-        name: json['name'] as String,
-        profileImageUrl: json['profileImageUrl'] as String?,
+        name: (json['nickname'] ?? json['name']) as String,
+        profileImageUrl: (json['profileImage'] ?? json['profileImageUrl']) as String?,
       );
 
   Map<String, dynamic> toJson() => {

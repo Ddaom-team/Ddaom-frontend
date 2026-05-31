@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../core/api_client.dart';
@@ -51,10 +52,27 @@ class AuthService {
       '/api/auth/google',
       data: {'idToken': idToken},
     );
+
+    debugPrint('[AuthService] status: ${res.statusCode}');
+    debugPrint('[AuthService] body: ${res.data}');
+    debugPrint('[AuthService] authorization header: ${res.headers.value('authorization')}');
+
+    // JWT는 항상 응답 헤더 Authorization: Bearer <jwt> 로 전달됨
+    final authHeader = res.headers.value('authorization');
+    if (authHeader == null || authHeader.isEmpty) {
+      throw GoogleAuthFailed('서버로부터 JWT를 받지 못했습니다.');
+    }
+    final jwt = authHeader.replaceFirst(RegExp(r'Bearer\s+', caseSensitive: false), '');
+
+    // 유저 정보: 바디가 직접 유저이거나 body['user']에 중첩될 수 있음
     final body = res.data as Map<String, dynamic>;
-    final login = LoginResponse.fromJson(body);
-    await _storage.saveSession(login.accessToken, login.user);
-    return login;
+    final userJson = body.containsKey('user')
+        ? body['user'] as Map<String, dynamic>
+        : body;
+    final user = User.fromJson(userJson);
+
+    await _storage.saveSession(jwt, user);
+    return LoginResponse(accessToken: jwt, tokenType: 'Bearer', expiresIn: 0, user: user);
   }
 
   Future<void> signOut() async {

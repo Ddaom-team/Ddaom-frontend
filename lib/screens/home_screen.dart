@@ -11,15 +11,20 @@ class HomeScreen extends StatelessWidget {
         title: const Text('Ddaom'),
       ),
       body: Center(
-        child: ElevatedButton.icon(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const CameraScreen()),
-            );
-          },
-          icon: const Icon(Icons.camera_alt),
-          label: const Text('카메라 열기'),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CameraScreen()),
+                );
+              },
+              icon: const Icon(Icons.camera_alt),
+              label: const Text('카메라 열기'),
+            ),
+          ],
         ),
       ),
     );

@@ -3,7 +3,8 @@ import 'package:dio/dio.dart';
 import 'secure_storage.dart';
 
 class ApiClient {
-  static const String baseUrl = 'http://10.0.2.2:8080';
+  static const String baseUrl = 'http://192.168.55.62:8080'; // 임서현 실기기
+  // static const String baseUrl = 'http://10.0.2.2:8080'; // 로컬 테스트 (안드로이드 에뮬레이터)
 
   final Dio dio;
   final SecureStorage _storage;
