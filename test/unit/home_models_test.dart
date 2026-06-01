@@ -11,6 +11,7 @@ void main() {
       for (final place in Place.mockList()) {
         expect(place.id.isNotEmpty, true);
         expect(place.name.isNotEmpty, true);
+        expect(place.imageUrl.isNotEmpty, true);
         expect(place.photoZoneCount, greaterThan(0));
       }
     });
