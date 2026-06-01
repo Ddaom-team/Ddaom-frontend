@@ -5,16 +5,58 @@ import '../../../core/app_theme.dart';
 import '../home_provider.dart';
 import 'place_card.dart';
 
-import '../../place/place_detail_screen.dart';
-
-class PopularZoneList extends StatelessWidget {
+class PopularZoneList extends StatefulWidget {
   final ScrollController scrollController;
 
   const PopularZoneList({super.key, required this.scrollController});
 
   @override
+  State<PopularZoneList> createState() => _PopularZoneListState();
+}
+
+class _PopularZoneListState extends State<PopularZoneList> {
+  static const double _cardWidth = 140.0;
+  static const double _cardSpacing = 12.0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.read<HomeProvider>().addListener(_onProviderChanged);
+    });
+  }
+
+  @override
+  void dispose() {
+    context.read<HomeProvider>().removeListener(_onProviderChanged);
+    super.dispose();
+  }
+
+  void _onProviderChanged() {
+    if (!mounted) return;
+    final provider = context.read<HomeProvider>();
+    final selectedId = provider.selectedPlaceId;
+    if (selectedId == null) return;
+
+    final places = provider.filteredPlaces;
+    final index = places.indexWhere((p) => p.id == selectedId);
+    if (index < 0) return;
+
+    if (!widget.scrollController.hasClients) return;
+    final offset = index * (_cardWidth + _cardSpacing);
+    final maxOffset = widget.scrollController.position.maxScrollExtent;
+
+    widget.scrollController.animateTo(
+      offset.clamp(0.0, maxOffset),
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final places = context.watch<HomeProvider>().filteredPlaces;
+    final provider = context.watch<HomeProvider>();
+    final places = provider.filteredPlaces;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -45,19 +87,14 @@ class PopularZoneList extends StatelessWidget {
         SizedBox(
           height: 160,
           child: ListView.separated(
-            controller: scrollController,
+            controller: widget.scrollController,
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: places.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 12),
+            separatorBuilder: (_, _) => const SizedBox(width: _cardSpacing),
             itemBuilder: (context, i) => PlaceCard(
               place: places[i],
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => PlaceDetailScreen(placeId: places[i].id),
-                ),
-              ),
+              onTap: () => provider.selectPlace(places[i].id),
             ),
           ),
         ),
