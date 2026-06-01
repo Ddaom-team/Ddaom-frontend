@@ -5,6 +5,7 @@ import 'core/api_client.dart';
 import 'core/app_theme.dart';
 import 'core/secure_storage.dart';
 import 'features/auth/auth_provider.dart';
+import 'features/home/home_provider.dart';
 import 'features/auth/auth_service.dart';
 import 'features/auth/login_screen.dart';
 import 'features/shell/main_shell.dart';
@@ -35,6 +36,7 @@ class DdaomApp extends StatelessWidget {
         Provider<SecureStorage>.value(value: storage),
         Provider<ApiClient>.value(value: api),
         ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
+        ChangeNotifierProvider<HomeProvider>(create: (_) => HomeProvider()),
       ],
       child: MaterialApp(
         title: '따옴',
