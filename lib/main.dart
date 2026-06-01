@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_naver_map/flutter_naver_map.dart';
 
 import 'core/api_client.dart';
+import 'core/naver_map_config.dart';
 import 'core/app_theme.dart';
 import 'core/secure_storage.dart';
 import 'features/auth/auth_provider.dart';
+import 'core/place_repository.dart';
 import 'features/home/home_provider.dart';
 import 'features/mypage/mypage_provider.dart';
 import 'features/auth/auth_service.dart';
@@ -13,8 +16,9 @@ import 'features/shell/main_shell.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await FlutterNaverMap().init(clientId: naverMapClientId);
   runApp(const DdaomApp());
 }
 
@@ -37,7 +41,7 @@ class DdaomApp extends StatelessWidget {
         Provider<SecureStorage>.value(value: storage),
         Provider<ApiClient>.value(value: api),
         ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
-        ChangeNotifierProvider<HomeProvider>(create: (_) => HomeProvider()),
+        ChangeNotifierProvider<HomeProvider>(create: (_) => HomeProvider(MockPlaceRepository())),
         ChangeNotifierProvider<MyPageProvider>(
           create: (ctx) => MyPageProvider(ctx.read<ApiClient>()),
         ),
