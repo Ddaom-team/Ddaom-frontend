@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>촬영한 사진을 갤러리에 저장합니다.</string>
 	<key>NMFClientId</key>
 	<string>h4y9xwl9fk</string>
 	<key>NSPhotoLibraryUsageDescription</key>

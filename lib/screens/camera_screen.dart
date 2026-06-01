@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:gal/gal.dart';
 
 class CameraScreen extends StatefulWidget {
   const CameraScreen({super.key});
@@ -18,6 +19,11 @@ class _CameraScreenState extends State<CameraScreen> {
   bool _isInitialized = false;
   bool _isGuideOn = true;
   bool _isTakingPicture = false;
+  bool _isSaving = false;
+
+  double _currentZoom = 1.0;
+  double _minZoom = 1.0;
+  double _maxZoom = 1.0;
 
   XFile? _lastPhoto;
 
@@ -57,10 +63,16 @@ class _CameraScreenState extends State<CameraScreen> {
     try {
       await controller.initialize();
 
+      final minZoom = await controller.getMinZoomLevel();
+      final maxZoom = await controller.getMaxZoomLevel();
+
       if (!mounted) return;
 
       setState(() {
         _isInitialized = true;
+        _minZoom = minZoom;
+        _maxZoom = maxZoom;
+        _currentZoom = 1.0;
       });
     } catch (e) {
       debugPrint('카메라 시작 실패: $e');
@@ -74,40 +86,58 @@ class _CameraScreenState extends State<CameraScreen> {
     await _startCamera(_cameras[_selectedCameraIndex]);
   }
 
+  Future<void> _setZoom(double level) async {
+    if (_controller == null || !_isInitialized) return;
+    final zoom = level.clamp(_minZoom, _maxZoom);
+    await _controller!.setZoomLevel(zoom);
+    setState(() => _currentZoom = zoom);
+  }
+
   Future<void> _takePicture() async {
     if (_controller == null ||
         !_controller!.value.isInitialized ||
-        _isTakingPicture) {
+        _isTakingPicture ||
+        _isSaving) {
       return;
     }
 
     try {
       setState(() => _isTakingPicture = true);
-
       final photo = await _controller!.takePicture();
-
       if (!mounted) return;
 
       setState(() {
         _lastPhoto = photo;
+        _isSaving = true;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('촬영 완료')),
-      );
+      await Gal.putImage(photo.path, album: '따옴');
 
-      // TODO:
-      // Navigator.push(
-      //   context,
-      //   MaterialPageRoute(
-      //     builder: (_) => PhotoRegisterScreen(photoPath: photo.path),
-      //   ),
-      // );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('갤러리에 저장됐어요 📸')),
+        );
+      }
+    } on GalException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              e.type == GalExceptionType.accessDenied
+                  ? '갤러리 접근 권한이 필요합니다'
+                  : '저장에 실패했습니다',
+            ),
+          ),
+        );
+      }
     } catch (e) {
-      debugPrint('촬영 실패: $e');
+      debugPrint('촬영/저장 실패: $e');
     } finally {
       if (mounted) {
-        setState(() => _isTakingPicture = false);
+        setState(() {
+          _isTakingPicture = false;
+          _isSaving = false;
+        });
       }
     }
   }
@@ -159,8 +189,8 @@ class _CameraScreenState extends State<CameraScreen> {
           ),
           const Spacer(),
           _circleIconButton(
-            icon: Icons.help_outline,
-            onTap: () {},
+            icon: Icons.cameraswitch,
+            onTap: _switchCamera,
           ),
         ],
       ),
@@ -259,6 +289,41 @@ class _CameraScreenState extends State<CameraScreen> {
     );
   }
 
+  Widget _buildZoomControls() {
+    const levels = [0.5, 1.0, 2.0];
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: levels.map((level) {
+        final isSelected = _currentZoom == level;
+        final label = level == 0.5 ? '0.5x' : level == 1.0 ? '1x' : '2x';
+        return GestureDetector(
+          onTap: () => _setZoom(level),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8),
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isSelected
+                  ? Colors.white.withValues(alpha: 0.25)
+                  : Colors.transparent,
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.white70,
+                fontSize: 13,
+                fontWeight:
+                    isSelected ? FontWeight.w700 : FontWeight.w500,
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
   Widget _buildBottomControls() {
     return ColoredBox(
       color: Colors.black,
@@ -269,28 +334,7 @@ class _CameraScreenState extends State<CameraScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _bottomGuideItem(
-                    icon: Icons.person_pin_circle_outlined,
-                    label: '사람 위치',
-                  ),
-                  _bottomGuideItem(
-                    icon: Icons.grid_3x3,
-                    label: '카메라 각도',
-                  ),
-                  _bottomGuideItem(
-                    icon: Icons.zoom_in,
-                    label: '0.5x\n줌 추천',
-                    active: true,
-                  ),
-                  _bottomGuideItem(
-                    icon: Icons.crop_portrait,
-                    label: '세로 모드',
-                  ),
-                ],
-              ),
+              _buildZoomControls(),
               const SizedBox(height: 22),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -378,33 +422,6 @@ class _CameraScreenState extends State<CameraScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _bottomGuideItem({
-    required IconData icon,
-    required String label,
-    bool active = false,
-  }) {
-    return Column(
-      children: [
-        Icon(
-          icon,
-          color: active ? const Color(0xFFFFD166) : Colors.white,
-          size: 25,
-        ),
-        const SizedBox(height: 6),
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: active ? const Color(0xFFFFD166) : Colors.white,
-            fontSize: 12,
-            height: 1.2,
-            fontWeight: active ? FontWeight.w800 : FontWeight.w500,
-          ),
-        ),
-      ],
     );
   }
 

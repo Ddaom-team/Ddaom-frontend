@@ -12,6 +12,7 @@ dependencies:
 
   cupertino_icons: ^1.0.8
   camera: ^0.11.0
+  gal: ^2.3.0
 
   provider: ^6.1.2
   dio: ^5.7.0
