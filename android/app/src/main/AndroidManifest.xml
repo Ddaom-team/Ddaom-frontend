@@ -5,6 +5,9 @@
         android:label="따옴"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <meta-data
+            android:name="com.naver.maps.map.CLIENT_ID"
+            android:value="h4y9xwl9fk"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"
