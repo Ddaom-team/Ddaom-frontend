@@ -5,8 +5,7 @@ import '../../../core/app_theme.dart';
 import '../home_provider.dart';
 import 'place_card.dart';
 
-// TODO: PlaceDetailScreen 구현 후 import 추가
-// import '../place_detail/place_detail_screen.dart';
+import '../../place/place_detail_screen.dart';
 
 class PopularZoneList extends StatelessWidget {
   final ScrollController scrollController;
@@ -53,12 +52,12 @@ class PopularZoneList extends StatelessWidget {
             separatorBuilder: (context, index) => const SizedBox(width: 12),
             itemBuilder: (context, i) => PlaceCard(
               place: places[i],
-              onTap: () {
-                // TODO: PlaceDetailScreen 구현 후 Navigator.push로 교체
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(places[i].name)),
-                );
-              },
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => PlaceDetailScreen(placeId: places[i].id),
+                ),
+              ),
             ),
           ),
         ),
