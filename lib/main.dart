@@ -7,7 +7,7 @@ import 'core/secure_storage.dart';
 import 'features/auth/auth_provider.dart';
 import 'features/auth/auth_service.dart';
 import 'features/auth/login_screen.dart';
-import 'screens/home_screen.dart';
+import 'features/shell/main_shell.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -44,7 +44,7 @@ class DdaomApp extends StatelessWidget {
         home: _Bootstrap(authProvider: authProvider),
         routes: {
           '/login': (_) => const LoginScreen(),
-          '/home': (_) => const HomeScreen(),
+          '/home': (_) => const MainShell(),
         },
       ),
     );
@@ -85,7 +85,7 @@ class _BootstrapState extends State<_Bootstrap> {
       );
     }
     return widget.authProvider.isAuthenticated
-        ? const HomeScreen()
+        ? const MainShell()
         : const LoginScreen();
   }
 }
