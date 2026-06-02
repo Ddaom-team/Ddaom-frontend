@@ -66,17 +66,20 @@ class _CameraNavIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 50,
-      height: 50,
-      decoration: const BoxDecoration(
-        color: AppColors.primaryPink,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(color: Color(0x33FF6B8A), blurRadius: 8, offset: Offset(0, 3)),
-        ],
+    return Transform.translate(
+      offset: const Offset(0, -6),
+      child: Container(
+        width: 54,
+        height: 54,
+        decoration: const BoxDecoration(
+          color: AppColors.primaryPink,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(color: Color(0x44FF6B8A), blurRadius: 10, offset: Offset(0, 3)),
+          ],
+        ),
+        child: const Icon(Icons.camera_alt, color: Colors.white, size: 27),
       ),
-      child: const Icon(Icons.camera_alt, color: Colors.white, size: 26),
     );
   }
 }
