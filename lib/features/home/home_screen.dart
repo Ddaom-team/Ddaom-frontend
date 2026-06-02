@@ -34,8 +34,8 @@ class HomeScreen extends StatelessWidget {
             ],
           ),
           DraggableScrollableSheet(
-            initialChildSize: 0.12,
-            minChildSize: 0.08,
+            initialChildSize: 0.32,
+            minChildSize: 0.10,
             maxChildSize: 0.55,
             builder: (context, scrollController) {
               return Container(

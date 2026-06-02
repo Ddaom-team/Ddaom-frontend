@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:gal/gal.dart';
 
 class CameraScreen extends StatefulWidget {
-  const CameraScreen({super.key});
+  final VoidCallback? onBack;
+  const CameraScreen({super.key, this.onBack});
 
   @override
   State<CameraScreen> createState() => _CameraScreenState();
@@ -24,6 +25,7 @@ class _CameraScreenState extends State<CameraScreen> {
   double _currentZoom = 1.0;
   double _minZoom = 1.0;
   double _maxZoom = 1.0;
+  double _baseZoomForGesture = 1.0;
 
   XFile? _lastPhoto;
 
@@ -176,7 +178,13 @@ class _CameraScreenState extends State<CameraScreen> {
         children: [
           _circleIconButton(
             icon: Icons.arrow_back_ios_new,
-            onTap: () => Navigator.pop(context),
+            onTap: () {
+              if (widget.onBack != null) {
+                widget.onBack!();
+              } else {
+                Navigator.maybePop(context);
+              }
+            },
           ),
           const Spacer(),
           const Text(
@@ -290,18 +298,23 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 
   Widget _buildZoomControls() {
-    const levels = [0.5, 1.0, 2.0];
+    const levels = [0.5, 1.0, 2.0, 3.0];
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: levels.map((level) {
-        final isSelected = _currentZoom == level;
-        final label = level == 0.5 ? '0.5x' : level == 1.0 ? '1x' : '2x';
+        final isSelected = (_currentZoom - level).abs() < 0.05;
+        final label = level == 1.0
+            ? '×1'
+            : level < 1.0
+                ? '×$level'
+                : '×${level.toInt()}';
         return GestureDetector(
           onTap: () => _setZoom(level),
           child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 8),
-            width: 48,
-            height: 48,
+            margin: const EdgeInsets.symmetric(horizontal: 5),
+            width: 46,
+            height: 46,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: isSelected
@@ -314,8 +327,7 @@ class _CameraScreenState extends State<CameraScreen> {
               style: TextStyle(
                 color: isSelected ? Colors.white : Colors.white70,
                 fontSize: 13,
-                fontWeight:
-                    isSelected ? FontWeight.w700 : FontWeight.w500,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
               ),
             ),
           ),
@@ -460,34 +472,42 @@ class _CameraScreenState extends State<CameraScreen> {
       body: Column(
         children: [
           Expanded(
-            child: Stack(
-              children: [
-                _buildCameraPreview(),
-                Container(color: Colors.black.withValues(alpha: 0.22)),
-                SafeArea(
-                  bottom: false,
-                  child: Stack(
-                    children: [
-                      Align(
-                        alignment: Alignment.topCenter,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            _buildTopBar(),
-                            _buildGuideCard(),
-                          ],
+            child: GestureDetector(
+              onScaleStart: (_) => _baseZoomForGesture = _currentZoom,
+              onScaleUpdate: (details) {
+                if (details.pointerCount >= 2) {
+                  _setZoom(_baseZoomForGesture * details.scale);
+                }
+              },
+              child: Stack(
+                children: [
+                  _buildCameraPreview(),
+                  Container(color: Colors.black.withValues(alpha: 0.22)),
+                  SafeArea(
+                    bottom: false,
+                    child: Stack(
+                      children: [
+                        Align(
+                          alignment: Alignment.topCenter,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _buildTopBar(),
+                              _buildGuideCard(),
+                            ],
+                          ),
                         ),
-                      ),
-                      Center(
-                        child: Transform.translate(
-                          offset: const Offset(0, 40),
-                          child: _buildCameraGuide(),
+                        Center(
+                          child: Transform.translate(
+                            offset: const Offset(0, 40),
+                            child: _buildCameraGuide(),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           _buildBottomControls(),

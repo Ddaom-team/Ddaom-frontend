@@ -21,7 +21,8 @@ class MyPageProvider extends ChangeNotifier {
     notifyListeners();
     try {
       final res = await _api.dio.get('/api/users/me');
-      _profile = parseResponse(res, (d) => UserProfile.fromJson(d as Map<String, dynamic>));
+      // 인터셉터가 이미 { code, message, data } 래퍼를 벗겨서 data만 전달함
+      _profile = UserProfile.fromJson(res.data as Map<String, dynamic>);
     } catch (e) {
       _error = e.toString();
     } finally {

@@ -6,6 +6,17 @@
 	<string>촬영한 사진을 갤러리에 저장합니다.</string>
 	<key>NMFClientId</key>
 	<string>h4y9xwl9fk</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>192.168.0.22</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>프로필 사진을 선택하기 위해 사진 라이브러리 접근이 필요합니다.</string>
 	<key>NSCameraUsageDescription</key>

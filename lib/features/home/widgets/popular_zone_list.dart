@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/app_theme.dart';
+import '../../place/place_detail_screen.dart';
 import '../home_provider.dart';
 import 'place_card.dart';
 
@@ -18,17 +19,24 @@ class _PopularZoneListState extends State<PopularZoneList> {
   static const double _cardWidth = 140.0;
   static const double _cardSpacing = 12.0;
 
+  final ScrollController _horizontalController = ScrollController();
+  HomeProvider? _homeProvider;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) context.read<HomeProvider>().addListener(_onProviderChanged);
+      if (mounted) {
+        _homeProvider = context.read<HomeProvider>();
+        _homeProvider!.addListener(_onProviderChanged);
+      }
     });
   }
 
   @override
   void dispose() {
-    context.read<HomeProvider>().removeListener(_onProviderChanged);
+    _homeProvider?.removeListener(_onProviderChanged);
+    _horizontalController.dispose();
     super.dispose();
   }
 
@@ -42,11 +50,11 @@ class _PopularZoneListState extends State<PopularZoneList> {
     final index = places.indexWhere((p) => p.id == selectedId);
     if (index < 0) return;
 
-    if (!widget.scrollController.hasClients) return;
+    if (!_horizontalController.hasClients) return;
     final offset = index * (_cardWidth + _cardSpacing);
-    final maxOffset = widget.scrollController.position.maxScrollExtent;
+    final maxOffset = _horizontalController.position.maxScrollExtent;
 
-    widget.scrollController.animateTo(
+    _horizontalController.animateTo(
       offset.clamp(0.0, maxOffset),
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOut,
@@ -58,8 +66,8 @@ class _PopularZoneListState extends State<PopularZoneList> {
     final provider = context.watch<HomeProvider>();
     final places = provider.filteredPlaces;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return ListView(
+      controller: widget.scrollController,
       children: [
         Center(
           child: Container(
@@ -87,17 +95,26 @@ class _PopularZoneListState extends State<PopularZoneList> {
         SizedBox(
           height: 160,
           child: ListView.separated(
-            controller: widget.scrollController,
+            controller: _horizontalController,
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: places.length,
-            separatorBuilder: (_, _) => const SizedBox(width: _cardSpacing),
+            separatorBuilder: (_, i) => const SizedBox(width: _cardSpacing),
             itemBuilder: (context, i) => PlaceCard(
               place: places[i],
-              onTap: () => provider.selectPlace(places[i].id),
+              onTap: () {
+                provider.selectPlace(places[i].id);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PlaceDetailScreen(placeId: places[i].id),
+                  ),
+                );
+              },
             ),
           ),
         ),
+        const SizedBox(height: 20),
       ],
     );
   }

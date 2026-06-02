@@ -4,7 +4,8 @@
     <application
         android:label="따옴"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="true">
         <meta-data
             android:name="com.naver.maps.map.CLIENT_ID"
             android:value="h4y9xwl9fk"/>
