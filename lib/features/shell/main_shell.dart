@@ -35,7 +35,7 @@ class _MainShellState extends State<MainShell> {
         index: _currentIndex,
         children: _screens,
       ),
-      bottomNavigationBar: Container(
+      bottomNavigationBar: _currentIndex == 2 ? null : Container(
         decoration: const BoxDecoration(
           color: AppColors.navBar,
           border: Border(top: BorderSide(color: Color(0xFFE8E8E8), width: 0.5)),
