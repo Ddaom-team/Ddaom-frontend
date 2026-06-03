@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_naver_map/flutter_naver_map.dart';
 
 import '../../../core/app_theme.dart';
 import '../home_provider.dart';
@@ -21,7 +20,7 @@ class _RegionPickerSheetState extends State<RegionPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.read<HomeProvider>();
+    final provider = context.watch<HomeProvider>();
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
@@ -76,12 +75,7 @@ class _RegionPickerSheetState extends State<RegionPickerSheet> {
                         : null,
                     onTap: () {
                       provider.setRegion(region);
-                      provider.mapController?.updateCamera(
-                        NCameraUpdate.scrollAndZoomTo(
-                          target: NLatLng(region.lat, region.lng),
-                          zoom: 15,
-                        ),
-                      );
+                      provider.moveToRegion(region);
                       Navigator.pop(context);
                     },
                   );

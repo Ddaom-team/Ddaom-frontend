@@ -96,4 +96,13 @@ class HomeProvider extends ChangeNotifier {
     mapController = controller;
     notifyListeners();
   }
+
+  void moveToRegion(Region region) {
+    mapController?.updateCamera(
+      NCameraUpdate.scrollAndZoomTo(
+        target: NLatLng(region.lat, region.lng),
+        zoom: 15,
+      ),
+    );
+  }
 }
