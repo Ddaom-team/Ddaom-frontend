@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/api_client.dart';
 import '../../core/app_theme.dart';
 import 'place_provider.dart';
 import 'widgets/info_tab.dart';
@@ -14,7 +15,7 @@ class PlaceDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => PlaceProvider(placeId),
+      create: (ctx) => PlaceProvider(placeId, ctx.read<ApiClient>()),
       child: const _PlaceDetailView(),
     );
   }

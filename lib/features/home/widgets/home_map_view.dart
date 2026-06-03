@@ -161,7 +161,7 @@ class _HomeMapViewState extends State<HomeMapView> {
             if (marker != null) {
               _activeInfoWindow = NInfoWindow.onMarker(
                 id: '${selectedId}_info',
-                text: '${place.name} · 포토존 ${place.photoZoneCount}개',
+                text: '${place.name} · 포토존 ${place.photoSpotCount}개',
               );
               try {
                 await marker.openInfoWindow(_activeInfoWindow!);

@@ -1,13 +1,17 @@
+// lib/features/place/place_provider.dart
 import 'package:flutter/foundation.dart';
-
+import '../../core/api_client.dart';
 import 'place_models.dart';
 
 class PlaceProvider extends ChangeNotifier {
   final String placeId;
+  final ApiClient _api;
   PlaceDetail? _detail;
   PhotoZoneTag? _selectedTag;
+  bool isLoading = false;
+  String? error;
 
-  PlaceProvider(this.placeId) {
+  PlaceProvider(this.placeId, this._api) {
     _load();
   }
 
@@ -30,9 +34,17 @@ class PlaceProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _load() {
-    // Mock: 실 API 전환 시 ApiClient 호출로 교체
-    _detail = PlaceDetail.mock();
+  Future<void> _load() async {
+    isLoading = true;
     notifyListeners();
+    try {
+      final res = await _api.dio.get('/api/places/$placeId');
+      _detail = PlaceDetail.fromJson(res.data as Map<String, dynamic>);
+    } catch (_) {
+      error = '장소 정보를 불러오지 못했습니다.';
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
   }
 }

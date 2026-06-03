@@ -30,6 +30,15 @@ class PhotoZone {
     required this.saveCount,
     required this.tags,
   });
+
+  factory PhotoZone.fromJson(Map<String, dynamic> json) => PhotoZone(
+    id: json['photoSpotId'].toString(),
+    name: json['title'] as String? ?? '',
+    imageUrl: json['imageUrl'] as String? ?? 'https://picsum.photos/seed/${json['photoSpotId']}/300/300',
+    likeCount: 0,
+    saveCount: 0,
+    tags: [],
+  );
 }
 
 class PlaceInfo {
@@ -74,6 +83,25 @@ class PlaceDetail {
     required this.info,
     required this.reviews,
   });
+
+  factory PlaceDetail.fromJson(Map<String, dynamic> json) {
+    final spots = (json['photoSpots'] as List<dynamic>? ?? [])
+        .map((e) => PhotoZone.fromJson(e as Map<String, dynamic>))
+        .toList();
+    final heroUrl = spots.isNotEmpty
+        ? spots.first.imageUrl
+        : 'https://picsum.photos/seed/default/600/400';
+    return PlaceDetail(
+      id: json['placeId'].toString(),
+      name: json['name'] as String,
+      heroImageUrl: heroUrl,
+      rating: 0.0,
+      reviewCount: 0,
+      photoZones: spots,
+      info: PlaceInfo(address: json['address'] as String? ?? '', hours: ''),
+      reviews: [],
+    );
+  }
 
   static PlaceDetail mock() => const PlaceDetail(
     id: 'p1',

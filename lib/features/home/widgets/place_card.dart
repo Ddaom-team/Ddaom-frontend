@@ -21,7 +21,7 @@ class PlaceCard extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: Image.network(
-                place.imageUrl,
+                place.thumbnailUrl ?? 'https://picsum.photos/seed/${place.id}/300/200',
                 width: 140,
                 height: 100,
                 fit: BoxFit.cover,
@@ -44,7 +44,7 @@ class PlaceCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
             Text(
-              '포토존 ${place.photoZoneCount}개',
+              '포토존 ${place.photoSpotCount}개',
               style: const TextStyle(
                 fontSize: 11,
                 color: AppColors.textMuted,
