@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/app_theme.dart';
 import 'mypage_provider.dart';
+import '../user/user_profile_screen.dart';
 import 'widgets/liked_zones_tab.dart';
 import 'widgets/my_photos_tab.dart';
 import 'widgets/profile_header.dart';
@@ -35,6 +36,19 @@ class _MyPageScreenState extends State<MyPageScreen> {
           backgroundColor: AppColors.background,
           elevation: 0,
           actions: [
+            // TODO(test): remove – temporary entry point for UserProfileScreen testing
+            IconButton(
+              icon: const Icon(Icons.person_add_outlined),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const UserProfileScreen(
+                    userId: 2,
+                    nickname: '테스트유저',
+                  ),
+                ),
+              ),
+            ),
             IconButton(icon: const Icon(Icons.settings_outlined), onPressed: () {}),
             IconButton(icon: const Icon(Icons.notifications_none), onPressed: () {}),
           ],
