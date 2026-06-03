@@ -3,9 +3,15 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:gal/gal.dart';
+import 'package:provider/provider.dart';
+
+import '../core/api_client.dart';
+import '../features/photo/photo_service.dart';
+import '../features/place/place_models.dart';
 
 class CameraScreen extends StatefulWidget {
-  const CameraScreen({super.key});
+  final PhotoZone? photoZone;
+  const CameraScreen({super.key, this.photoZone});
 
   @override
   State<CameraScreen> createState() => _CameraScreenState();
@@ -113,9 +119,20 @@ class _CameraScreenState extends State<CameraScreen> {
 
       await Gal.putImage(photo.path, album: '따옴');
 
+      final photoZone = widget.photoZone;
+      final service = PhotoService(context.read<ApiClient>());
+      await service.uploadPhoto(
+        filePath: photo.path,
+        photoSpotId: photoZone?.id,
+      );
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('갤러리에 저장됐어요 📸')),
+          SnackBar(
+            content: Text(
+              photoZone != null ? '사진이 업로드됐어요!' : '갤러리에 저장됐어요',
+            ),
+          ),
         );
       }
     } on GalException catch (e) {
@@ -128,6 +145,12 @@ class _CameraScreenState extends State<CameraScreen> {
                   : '저장에 실패했습니다',
             ),
           ),
+        );
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('업로드 실패: ${e.message}')),
         );
       }
     } catch (e) {
@@ -213,11 +236,11 @@ class _CameraScreenState extends State<CameraScreen> {
         ),
         child: Row(
           children: [
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     '선택한 포토존',
                     style: TextStyle(
                       color: Colors.white70,
@@ -227,8 +250,8 @@ class _CameraScreenState extends State<CameraScreen> {
                   ),
                   SizedBox(height: 6),
                   Text(
-                    '2층 창가 자리',
-                    style: TextStyle(
+                    widget.photoZone?.name ?? '포토존을 선택해주세요',
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 17,
                       fontWeight: FontWeight.w800,
