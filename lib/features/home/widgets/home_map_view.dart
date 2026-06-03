@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/app_theme.dart';
@@ -84,6 +85,7 @@ class _HomeMapViewState extends State<HomeMapView> {
         _controller = controller;
         provider.registerMapController(controller);
         _syncMarkers(provider);
+        _enableLocationOverlay(controller);
       },
       onMapTapped: (_, latLng) => provider.clearSelection(),
     );
@@ -183,6 +185,14 @@ class _HomeMapViewState extends State<HomeMapView> {
     } finally {
       _syncing = false;
     }
+  }
+
+  Future<void> _enableLocationOverlay(NaverMapController controller) async {
+    final status = await Permission.locationWhenInUse.request();
+    if (!status.isGranted) return;
+    final overlay = await controller.getLocationOverlay();
+    overlay.setIsVisible(true);
+    controller.setLocationTrackingMode(NLocationTrackingMode.noFollow);
   }
 }
 
