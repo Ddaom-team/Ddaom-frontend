@@ -14,8 +14,8 @@ class UserProfile {
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
-    id: json['id'] as String,
-    name: json['name'] as String,
+    id: json['id'].toString(),
+    name: (json['name'] ?? json['email'] ?? '사용자').toString(),
     avatarUrl: json['avatarUrl'] as String?,
     followingCount: json['followingCount'] as int? ?? 0,
     followerCount: json['followerCount'] as int? ?? 0,

@@ -38,6 +38,12 @@ class _PlaceDetailView extends StatelessWidget {
             SliverAppBar(
               expandedHeight: 260,
               pinned: true,
+              foregroundColor: Colors.white,
+              backgroundColor: AppColors.primaryPink,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
               flexibleSpace: FlexibleSpaceBar(
                 background: Image.network(
                   detail.heroImageUrl,

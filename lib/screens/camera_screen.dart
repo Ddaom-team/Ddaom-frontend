@@ -11,7 +11,8 @@ import '../features/place/place_models.dart';
 
 class CameraScreen extends StatefulWidget {
   final PhotoZone? photoZone;
-  const CameraScreen({super.key, this.photoZone});
+  final VoidCallback? onBack;
+  const CameraScreen({super.key, this.photoZone, this.onBack});
 
   @override
   State<CameraScreen> createState() => _CameraScreenState();
@@ -21,6 +22,7 @@ class _CameraScreenState extends State<CameraScreen> {
   List<CameraDescription> _cameras = [];
   CameraController? _controller;
 
+  // 현재 사용 중인 카메라 인덱스 (후면 광각 = 0, 전면 = 1 등)
   int _selectedCameraIndex = 0;
   bool _isInitialized = false;
   bool _isGuideOn = true;
@@ -30,6 +32,14 @@ class _CameraScreenState extends State<CameraScreen> {
   double _currentZoom = 1.0;
   double _minZoom = 1.0;
   double _maxZoom = 1.0;
+  double _baseZoomForGesture = 1.0;
+
+  // 초광각(0.5x) 카메라 전환용
+  CameraDescription? _ultraWideCamera;
+  bool _isUltraWide = false;
+
+  // 경쟁 조건 방지: 최신 startCamera 호출만 최종 반영
+  int _cameraVersion = 0;
 
   XFile? _lastPhoto;
 
@@ -44,14 +54,41 @@ class _CameraScreenState extends State<CameraScreen> {
       _cameras = await availableCameras();
       if (_cameras.isEmpty) return;
 
+      // 주 후면 카메라로 시작
+      _selectedCameraIndex = _cameras.indexWhere(
+        (c) => c.lensDirection == CameraLensDirection.back,
+      );
+      if (_selectedCameraIndex == -1) _selectedCameraIndex = 0;
+
       await _startCamera(_cameras[_selectedCameraIndex]);
+
+      // 초광각 카메라 탐색: 두 번째 후면 카메라 (iPhone 11+)
+      final backCameras = _cameras
+          .where((c) => c.lensDirection == CameraLensDirection.back)
+          .toList();
+      if (backCameras.length >= 2) {
+        _ultraWideCamera = backCameras[1];
+      }
     } catch (e) {
       debugPrint('카메라 초기화 실패: $e');
     }
   }
 
   Future<void> _startCamera(CameraDescription camera) async {
+    // 버전 증가로 이전 실행 중인 startCamera 무효화
+    _cameraVersion++;
+    final myVersion = _cameraVersion;
+
     final oldController = _controller;
+
+    setState(() {
+      _controller = null;
+      _isInitialized = false;
+    });
+
+    await oldController?.dispose();
+
+    if (!mounted || _cameraVersion != myVersion) return;
 
     final controller = CameraController(
       camera,
@@ -59,44 +96,94 @@ class _CameraScreenState extends State<CameraScreen> {
       enableAudio: false,
     );
 
-    setState(() {
-      _controller = controller;
-      _isInitialized = false;
-    });
-
-    await oldController?.dispose();
-
     try {
       await controller.initialize();
+
+      if (!mounted || _cameraVersion != myVersion) {
+        await controller.dispose();
+        return;
+      }
 
       final minZoom = await controller.getMinZoomLevel();
       final maxZoom = await controller.getMaxZoomLevel();
 
-      if (!mounted) return;
+      if (!mounted || _cameraVersion != myVersion) {
+        await controller.dispose();
+        return;
+      }
 
       setState(() {
+        _controller = controller;
         _isInitialized = true;
         _minZoom = minZoom;
         _maxZoom = maxZoom;
-        _currentZoom = 1.0;
+        _currentZoom = _isUltraWide ? 0.5 : 1.0;
       });
     } catch (e) {
       debugPrint('카메라 시작 실패: $e');
+      if (_cameraVersion == myVersion) await controller.dispose();
     }
   }
 
+  // 전면/후면 토글만 수행 (초광각/망원 포함 전체 사이클 X)
   Future<void> _switchCamera() async {
     if (_cameras.length < 2 || !_isInitialized) return;
 
-    _selectedCameraIndex = (_selectedCameraIndex + 1) % _cameras.length;
+    _isUltraWide = false;
+
+    final currentDirection = _cameras[_selectedCameraIndex].lensDirection;
+    final targetDirection = currentDirection == CameraLensDirection.back
+        ? CameraLensDirection.front
+        : CameraLensDirection.back;
+
+    final targetIndex = _cameras.indexWhere(
+      (c) => c.lensDirection == targetDirection,
+    );
+    if (targetIndex == -1) return;
+
+    _selectedCameraIndex = targetIndex;
     await _startCamera(_cameras[_selectedCameraIndex]);
   }
 
-  Future<void> _setZoom(double level) async {
-    if (_controller == null || !_isInitialized) return;
-    final zoom = level.clamp(_minZoom, _maxZoom);
-    await _controller!.setZoomLevel(zoom);
-    setState(() => _currentZoom = zoom);
+  Future<void> _setZoom(double level, {bool allowCameraSwitch = false}) async {
+    if (!_isInitialized) return;
+
+    if (level < 1.0) {
+      if (_minZoom < 1.0) {
+        // 네이티브 초광각 지원: API로 직접 줌
+        final zoom = level.clamp(_minZoom, 1.0);
+        try {
+          await _controller!.setZoomLevel(zoom);
+          if (mounted) setState(() => _currentZoom = zoom);
+        } catch (_) {}
+      } else if (allowCameraSwitch && _ultraWideCamera != null && !_isUltraWide) {
+        // 초광각 카메라로 전환 (버튼 탭 시에만)
+        _isUltraWide = true;
+        await _startCamera(_ultraWideCamera!);
+      }
+      return;
+    }
+
+    // 1x 이상: 필요 시 광각 카메라로 복귀
+    if (_isUltraWide && allowCameraSwitch) {
+      _isUltraWide = false;
+      await _startCamera(_cameras[_selectedCameraIndex]);
+      // 복귀 후 요청한 줌 레벨 적용
+      if (!_isInitialized || _controller == null) return;
+      final zoom = level.clamp(1.0, _maxZoom);
+      try {
+        await _controller!.setZoomLevel(zoom);
+        if (mounted) setState(() => _currentZoom = zoom);
+      } catch (_) {}
+      return;
+    }
+
+    if (_controller == null) return;
+    final zoom = level.clamp(1.0, _maxZoom);
+    try {
+      await _controller!.setZoomLevel(zoom);
+      if (mounted) setState(() => _currentZoom = zoom);
+    } catch (_) {}
   }
 
   Future<void> _takePicture() async {
@@ -173,7 +260,6 @@ class _CameraScreenState extends State<CameraScreen> {
     }
 
     final previewSize = _controller!.value.previewSize;
-
     if (previewSize == null) {
       return const Center(
         child: CircularProgressIndicator(color: Colors.white),
@@ -199,7 +285,13 @@ class _CameraScreenState extends State<CameraScreen> {
         children: [
           _circleIconButton(
             icon: Icons.arrow_back_ios_new,
-            onTap: () => Navigator.pop(context),
+            onTap: () {
+              if (widget.onBack != null) {
+                widget.onBack!();
+              } else {
+                Navigator.maybePop(context);
+              }
+            },
           ),
           const Spacer(),
           const Text(
@@ -313,18 +405,23 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 
   Widget _buildZoomControls() {
-    const levels = [0.5, 1.0, 2.0];
+    const levels = [0.5, 1.0, 2.0, 3.0];
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: levels.map((level) {
-        final isSelected = _currentZoom == level;
-        final label = level == 0.5 ? '0.5x' : level == 1.0 ? '1x' : '2x';
+        final isSelected = (_currentZoom - level).abs() < 0.05;
+        final label = level == 1.0
+            ? '×1'
+            : level < 1.0
+                ? '×$level'
+                : '×${level.toInt()}';
         return GestureDetector(
-          onTap: () => _setZoom(level),
+          onTap: () => _setZoom(level, allowCameraSwitch: true),
           child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 8),
-            width: 48,
-            height: 48,
+            margin: const EdgeInsets.symmetric(horizontal: 5),
+            width: 46,
+            height: 46,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: isSelected
@@ -337,8 +434,7 @@ class _CameraScreenState extends State<CameraScreen> {
               style: TextStyle(
                 color: isSelected ? Colors.white : Colors.white70,
                 fontSize: 13,
-                fontWeight:
-                    isSelected ? FontWeight.w700 : FontWeight.w500,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
               ),
             ),
           ),
@@ -387,9 +483,9 @@ class _CameraScreenState extends State<CameraScreen> {
       child: _lastPhoto == null
           ? const Icon(Icons.photo_library_outlined, color: Colors.white)
           : Image.file(
-        File(_lastPhoto!.path),
-        fit: BoxFit.cover,
-      ),
+              File(_lastPhoto!.path),
+              fit: BoxFit.cover,
+            ),
     );
   }
 
@@ -420,11 +516,7 @@ class _CameraScreenState extends State<CameraScreen> {
 
   Widget _guideToggleButton() {
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          _isGuideOn = !_isGuideOn;
-        });
-      },
+      onTap: () => setState(() => _isGuideOn = !_isGuideOn),
       child: Container(
         width: 70,
         height: 58,
@@ -461,11 +553,7 @@ class _CameraScreenState extends State<CameraScreen> {
           color: Colors.black.withValues(alpha: 0.35),
           shape: BoxShape.circle,
         ),
-        child: Icon(
-          icon,
-          color: Colors.white,
-          size: 21,
-        ),
+        child: Icon(icon, color: Colors.white, size: 21),
       ),
     );
   }
@@ -483,34 +571,42 @@ class _CameraScreenState extends State<CameraScreen> {
       body: Column(
         children: [
           Expanded(
-            child: Stack(
-              children: [
-                _buildCameraPreview(),
-                Container(color: Colors.black.withValues(alpha: 0.22)),
-                SafeArea(
-                  bottom: false,
-                  child: Stack(
-                    children: [
-                      Align(
-                        alignment: Alignment.topCenter,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            _buildTopBar(),
-                            _buildGuideCard(),
-                          ],
+            child: GestureDetector(
+              onScaleStart: (_) => _baseZoomForGesture = _currentZoom,
+              onScaleUpdate: (details) {
+                if (details.pointerCount >= 2) {
+                  _setZoom(_baseZoomForGesture * details.scale);
+                }
+              },
+              child: Stack(
+                children: [
+                  _buildCameraPreview(),
+                  Container(color: Colors.black.withValues(alpha: 0.22)),
+                  SafeArea(
+                    bottom: false,
+                    child: Stack(
+                      children: [
+                        Align(
+                          alignment: Alignment.topCenter,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _buildTopBar(),
+                              _buildGuideCard(),
+                            ],
+                          ),
                         ),
-                      ),
-                      Center(
-                        child: Transform.translate(
-                          offset: const Offset(0, 40),
-                          child: _buildCameraGuide(),
+                        Center(
+                          child: Transform.translate(
+                            offset: const Offset(0, 40),
+                            child: _buildCameraGuide(),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           _buildBottomControls(),
@@ -535,58 +631,22 @@ class _GuideFramePainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
 
     final centerY = size.height * 0.52;
-
-    canvas.drawLine(
-      Offset(0, centerY),
-      Offset(size.width, centerY),
-      linePaint,
-    );
+    canvas.drawLine(Offset(0, centerY), Offset(size.width, centerY), linePaint);
 
     const cornerLength = 32.0;
-
-    canvas.drawLine(
-      const Offset(0, 0),
-      const Offset(cornerLength, 0),
-      cornerPaint,
-    );
-    canvas.drawLine(
-      const Offset(0, 0),
-      const Offset(0, cornerLength),
-      cornerPaint,
-    );
-
-    canvas.drawLine(
-      Offset(size.width, 0),
-      Offset(size.width - cornerLength, 0),
-      cornerPaint,
-    );
-    canvas.drawLine(
-      Offset(size.width, 0),
-      Offset(size.width, cornerLength),
-      cornerPaint,
-    );
-
-    canvas.drawLine(
-      Offset(0, size.height),
-      Offset(cornerLength, size.height),
-      cornerPaint,
-    );
-    canvas.drawLine(
-      Offset(0, size.height),
-      Offset(0, size.height - cornerLength),
-      cornerPaint,
-    );
-
-    canvas.drawLine(
-      Offset(size.width, size.height),
-      Offset(size.width - cornerLength, size.height),
-      cornerPaint,
-    );
-    canvas.drawLine(
-      Offset(size.width, size.height),
-      Offset(size.width, size.height - cornerLength),
-      cornerPaint,
-    );
+    final corners = [
+      [Offset.zero, Offset(cornerLength, 0)],
+      [Offset.zero, Offset(0, cornerLength)],
+      [Offset(size.width, 0), Offset(size.width - cornerLength, 0)],
+      [Offset(size.width, 0), Offset(size.width, cornerLength)],
+      [Offset(0, size.height), Offset(cornerLength, size.height)],
+      [Offset(0, size.height), Offset(0, size.height - cornerLength)],
+      [Offset(size.width, size.height), Offset(size.width - cornerLength, size.height)],
+      [Offset(size.width, size.height), Offset(size.width, size.height - cornerLength)],
+    ];
+    for (final pair in corners) {
+      canvas.drawLine(pair[0], pair[1], cornerPaint);
+    }
   }
 
   @override

@@ -14,14 +14,19 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
+  late final List<Widget> _screens;
 
-  static const _screens = <Widget>[
-    HomeScreen(),
-    _PlaceholderScreen(label: '검색'),
-    CameraScreen(),
-    _PlaceholderScreen(label: '저장한 장소'),
-    MyPageScreen(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _screens = [
+      const HomeScreen(),
+      const _PlaceholderScreen(label: '검색'),
+      CameraScreen(onBack: () => setState(() => _currentIndex = 0)),
+      const _PlaceholderScreen(label: '저장한 장소'),
+      const MyPageScreen(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,19 +35,50 @@ class _MainShellState extends State<MainShell> {
         index: _currentIndex,
         children: _screens,
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (i) => setState(() => _currentIndex = i),
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primaryPink,
-        unselectedItemColor: AppColors.textMuted,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: '홈'),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: '검색'),
-          BottomNavigationBarItem(icon: Icon(Icons.camera_alt), label: '카메라'),
-          BottomNavigationBarItem(icon: Icon(Icons.bookmark_border), label: '저장'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: '마이'),
-        ],
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          color: AppColors.navBar,
+          border: Border(top: BorderSide(color: Color(0xFFE8E8E8), width: 0.5)),
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: (i) => setState(() => _currentIndex = i),
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: AppColors.navBar,
+          selectedItemColor: AppColors.primaryPink,
+          unselectedItemColor: AppColors.textMuted,
+          elevation: 0,
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: '홈'),
+            BottomNavigationBarItem(icon: Icon(Icons.search), label: '검색'),
+            BottomNavigationBarItem(icon: _CameraNavIcon(), label: ''),
+            BottomNavigationBarItem(icon: Icon(Icons.bookmark_border), label: '저장'),
+            BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: '마이'),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CameraNavIcon extends StatelessWidget {
+  const _CameraNavIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.translate(
+      offset: const Offset(0, -6),
+      child: Container(
+        width: 54,
+        height: 54,
+        decoration: const BoxDecoration(
+          color: AppColors.primaryPink,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(color: Color(0x44FF6B8A), blurRadius: 10, offset: Offset(0, 3)),
+          ],
+        ),
+        child: const Icon(Icons.camera_alt, color: Colors.white, size: 27),
       ),
     );
   }

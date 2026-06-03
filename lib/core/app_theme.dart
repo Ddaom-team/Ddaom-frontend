@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const background = Color(0xFFFFF8F5);
+  static const background = Color(0xFFFFFFFF);
+  static const navBar = Color(0xFFF0F0F0);
   static const primaryPink = Color(0xFFFF6B8A);
   static const secondaryPink = Color(0xFFFFB3C1);
   static const illustrationBox = Color(0xFFFFE8EC);
@@ -13,7 +14,17 @@ class AppColors {
 class AppTheme {
   static ThemeData get light => ThemeData(
         scaffoldBackgroundColor: AppColors.background,
-        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primaryPink),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.primaryPink,
+          surface: Colors.white,
+        ).copyWith(surfaceTint: Colors.transparent),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: AppColors.background,
+          surfaceTintColor: AppColors.background,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          foregroundColor: AppColors.textMain,
+        ),
         useMaterial3: true,
       );
 }
