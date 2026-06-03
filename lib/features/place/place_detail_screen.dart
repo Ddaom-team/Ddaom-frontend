@@ -26,10 +26,18 @@ class _PlaceDetailView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final detail = context.watch<PlaceProvider>().detail;
-    if (detail == null) {
+    final provider = context.watch<PlaceProvider>();
+    if (provider.error != null) {
+      return Scaffold(
+        body: Center(
+          child: Text(provider.error!, style: const TextStyle(color: Colors.grey)),
+        ),
+      );
+    }
+    if (provider.detail == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
+    final detail = provider.detail!;
 
     return DefaultTabController(
       length: 3,

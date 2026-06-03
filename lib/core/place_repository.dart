@@ -1,5 +1,5 @@
 // lib/core/place_repository.dart
-import '../core/api_client.dart';
+import 'api_client.dart';
 import '../features/home/home_models.dart';
 
 abstract class PlaceRepository {
