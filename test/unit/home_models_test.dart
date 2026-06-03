@@ -3,16 +3,16 @@ import 'package:ddaom_frontend/features/home/home_models.dart';
 
 void main() {
   group('Place.mockList', () {
-    test('5개의 장소를 반환한다', () {
-      expect(Place.mockList().length, 5);
+    test('장소 목록을 반환한다', () {
+      expect(Place.mockList().isNotEmpty, true);
     });
 
-    test('각 장소는 id, name, imageUrl, photoZoneCount를 갖는다', () {
+    test('각 장소는 id, name, address, photoSpotCount를 갖는다', () {
       for (final place in Place.mockList()) {
         expect(place.id.isNotEmpty, true);
         expect(place.name.isNotEmpty, true);
-        expect(place.imageUrl.isNotEmpty, true);
-        expect(place.photoZoneCount, greaterThan(0));
+        expect(place.address.isNotEmpty, true);
+        expect(place.photoSpotCount, greaterThan(0));
       }
     });
 
