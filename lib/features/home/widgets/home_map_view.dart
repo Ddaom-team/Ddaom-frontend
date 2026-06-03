@@ -189,7 +189,7 @@ class _HomeMapViewState extends State<HomeMapView> {
 
   Future<void> _enableLocationOverlay(NaverMapController controller) async {
     final status = await Permission.locationWhenInUse.request();
-    if (!status.isGranted) return;
+    if (!status.isGranted || !mounted) return;
     final overlay = await controller.getLocationOverlay();
     overlay.setIsVisible(true);
     controller.setLocationTrackingMode(NLocationTrackingMode.noFollow);
