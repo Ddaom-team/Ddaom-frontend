@@ -3,10 +3,8 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:gal/gal.dart';
-import 'package:provider/provider.dart';
 
-import '../core/api_client.dart';
-import '../features/photo/photo_service.dart';
+import '../features/photo/photo_metadata_screen.dart';
 import '../features/place/place_models.dart';
 
 class CameraScreen extends StatefulWidget {
@@ -206,22 +204,16 @@ class _CameraScreenState extends State<CameraScreen> {
 
       await Gal.putImage(photo.path, album: '따옴');
 
-      final photoZone = widget.photoZone;
-      final service = PhotoService(context.read<ApiClient>());
-      await service.uploadPhoto(
-        filePath: photo.path,
-        photoSpotId: photoZone?.id,
-      );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              photoZone != null ? '사진이 업로드됐어요!' : '갤러리에 저장됐어요',
-            ),
+      if (!mounted) return;
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PhotoMetadataScreen(
+            filePath: photo.path,
+            photoSpotId: widget.photoZone?.id,
           ),
-        );
-      }
+        ),
+      );
     } on GalException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -232,12 +224,6 @@ class _CameraScreenState extends State<CameraScreen> {
                   : '저장에 실패했습니다',
             ),
           ),
-        );
-      }
-    } on ApiException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('업로드 실패: ${e.message}')),
         );
       }
     } catch (e) {
