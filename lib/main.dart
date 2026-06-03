@@ -41,7 +41,9 @@ class DdaomApp extends StatelessWidget {
         Provider<SecureStorage>.value(value: storage),
         Provider<ApiClient>.value(value: api),
         ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
-        ChangeNotifierProvider<HomeProvider>(create: (_) => HomeProvider(MockPlaceRepository())),
+        ChangeNotifierProvider<HomeProvider>(
+          create: (ctx) => HomeProvider(ApiPlaceRepository(ctx.read<ApiClient>())),
+        ),
         ChangeNotifierProvider<MyPageProvider>(
           create: (ctx) => MyPageProvider(ctx.read<ApiClient>()),
         ),
