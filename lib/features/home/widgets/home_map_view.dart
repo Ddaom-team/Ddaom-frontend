@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/app_theme.dart';
+import '../../place/place_detail_screen.dart';
 import '../home_models.dart';
 import '../home_provider.dart';
 
@@ -122,7 +123,20 @@ class _HomeMapViewState extends State<HomeMapView> {
           icon: icon,
           size: _normalSize,
         );
-        marker.setOnTapListener((_) => provider.selectPlace(place.id));
+        marker.setOnTapListener((_) {
+          // 이미 선택된 핀을 다시 탭하면 상세 진입, 아니면 선택(카메라 이동 + 말풍선)만.
+          if (provider.selectedPlaceId == place.id) {
+            if (!mounted) return;
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => PlaceDetailScreen(placeId: place.id),
+              ),
+            );
+          } else {
+            provider.selectPlace(place.id);
+          }
+        });
         _markers[place.id] = marker;
         toAdd.add(marker);
       }
@@ -188,11 +202,40 @@ class _HomeMapViewState extends State<HomeMapView> {
   }
 
   Future<void> _enableLocationOverlay(NaverMapController controller) async {
-    final status = await Permission.locationWhenInUse.request();
-    if (!status.isGranted || !mounted) return;
-    final overlay = await controller.getLocationOverlay();
+    // 1. 위치 서비스(기기 GPS) 켜져 있는지 확인
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      debugPrint('[GPS] 위치 서비스가 꺼져 있음');
+      return;
+    }
+
+    // 2. 권한 요청 (다이얼로그 표시)
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      debugPrint('[GPS] 위치 권한 거부됨: $permission');
+      return;
+    }
+    if (!mounted) return;
+
+    // 3. 현재 위치 받아서 파란 점 표시 + 카메라 이동
+    final pos = await Geolocator.getCurrentPosition(
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+    );
+    if (!mounted) return;
+
+    final overlay = controller.getLocationOverlay();
     overlay.setIsVisible(true);
-    controller.setLocationTrackingMode(NLocationTrackingMode.noFollow);
+    overlay.setPosition(NLatLng(pos.latitude, pos.longitude));
+    controller.setLocationTrackingMode(NLocationTrackingMode.follow);
+    await controller.updateCamera(
+      NCameraUpdate.scrollAndZoomTo(
+        target: NLatLng(pos.latitude, pos.longitude),
+        zoom: 15,
+      ),
+    );
   }
 }
 

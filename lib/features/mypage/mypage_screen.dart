@@ -3,7 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../../core/app_theme.dart';
 import 'mypage_provider.dart';
-import '../user/user_profile_screen.dart';
+import '../../core/api_client.dart';
+import '../user/user_search_sheet.dart';
 import 'widgets/liked_zones_tab.dart';
 import 'widgets/my_photos_tab.dart';
 import 'widgets/profile_header.dart';
@@ -36,18 +37,20 @@ class _MyPageScreenState extends State<MyPageScreen> {
           backgroundColor: AppColors.background,
           elevation: 0,
           actions: [
-            // TODO(test): remove – temporary entry point for UserProfileScreen testing
+            // TODO(test): remove – 유저 프로필 진입점 확정 후 제거
             IconButton(
-              icon: const Icon(Icons.person_add_outlined),
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const UserProfileScreen(
-                    userId: 2,
-                    nickname: '테스트유저',
+              icon: const Icon(Icons.person_search_outlined),
+              onPressed: () {
+                final api = context.read<ApiClient>();
+                showModalBottomSheet<void>(
+                  context: context,
+                  isScrollControlled: true,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                   ),
-                ),
-              ),
+                  builder: (_) => UserSearchSheet(api: api),
+                );
+              },
             ),
             IconButton(icon: const Icon(Icons.settings_outlined), onPressed: () {}),
             IconButton(icon: const Icon(Icons.notifications_none), onPressed: () {}),

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/api_client.dart';
 import '../../core/app_theme.dart';
+import '../mypage/mypage_provider.dart';
 import 'follow_service.dart';
 
 class UserProfileScreen extends StatefulWidget {
@@ -54,6 +55,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   Future<void> _onFollowTap() async {
     if (_isFollowing == null || _actionLoading) return;
 
+    // async gap 이전에 캡처 (use_build_context_synchronously 회피)
+    final myPage = context.read<MyPageProvider>();
+
     if (_isFollowing!) {
       final confirmed = await showDialog<bool>(
         context: context,
@@ -80,6 +84,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         await _followService.follow(widget.userId);
       }
       await _load();
+      // 마이페이지의 내 팔로잉 카운트도 서버에서 다시 로드 → 실시간 반영
+      await myPage.loadProfile();
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

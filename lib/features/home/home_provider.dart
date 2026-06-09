@@ -26,6 +26,16 @@ class Region {
     Region(name: '명동', lat: 37.5636, lng: 126.9855),
     Region(name: '강남', lat: 37.4979, lng: 127.0276),
     Region(name: '잠실', lat: 37.5133, lng: 127.1001),
+    Region(name: '인하대', lat: 37.4499, lng: 126.6537),
+    Region(name: '간석역', lat: 37.4765, lng: 126.7041),
+    Region(name: '주안역', lat: 37.4607, lng: 126.6849),
+    Region(name: '부평', lat: 37.4891, lng: 126.7224),
+    Region(name: '송도', lat: 37.3826, lng: 126.6622),
+    Region(name: '차이나타운', lat: 37.4762, lng: 126.6174),
+    Region(name: '월미도', lat: 37.4752, lng: 126.5970),
+    Region(name: '해운대', lat: 35.1587, lng: 129.1603),
+    Region(name: '광안리', lat: 35.1530, lng: 129.1186),
+    Region(name: '감천문화마을', lat: 35.0979, lng: 129.0106),
   ];
 }
 

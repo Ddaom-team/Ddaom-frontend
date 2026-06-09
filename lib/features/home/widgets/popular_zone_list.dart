@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/app_theme.dart';
-import '../../place/place_detail_screen.dart';
 import '../home_provider.dart';
 import 'place_card.dart';
 
@@ -102,15 +101,8 @@ class _PopularZoneListState extends State<PopularZoneList> {
             separatorBuilder: (_, i) => const SizedBox(width: _cardSpacing),
             itemBuilder: (context, i) => PlaceCard(
               place: places[i],
-              onTap: () {
-                provider.selectPlace(places[i].id);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => PlaceDetailScreen(placeId: places[i].id),
-                  ),
-                );
-              },
+              // 카드 클릭 시 지도에서 해당 위치로 이동(선택)만. 상세 진입은 지도 핀 클릭으로.
+              onTap: () => provider.selectPlace(places[i].id),
             ),
           ),
         ),
