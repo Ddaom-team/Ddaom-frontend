@@ -25,4 +25,11 @@ class CommunityService {
     await _api.dio.delete('/api/follows/$userId');
   }
 
+  Future<List<FollowingPhoto>> getFollowingFeed() async {
+    final res = await _api.dio.get('/api/photos/following');
+    final items = res.data as List<dynamic>;
+    return items
+        .map((json) => FollowingPhoto.fromJson(json as Map<String, dynamic>))
+        .toList();
+  }
 }

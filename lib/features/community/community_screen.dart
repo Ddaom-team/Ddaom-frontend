@@ -44,42 +44,6 @@ class _CommunityPost {
   });
 }
 
-List<_CommunityPost> _followingMock() {
-  final names = ['지윤', '민서', '하린', '서아', '예린', '도현', '채원', '준호', '하아', '서영', '유나', '현우'];
-  final locations = ['경복궁', '북촌한옥마을', '성수동', '홍대거리', '한강공원', '망원시장'];
-  final tagSets = [
-    ['포토존', '서울여행'],
-    ['한옥', '데이트'],
-    ['카페거리', '스냅'],
-    ['감성사진', '홍대'],
-    ['한강', '빈티지'],
-    ['시장', '필름'],
-  ];
-  final moods = [PhotoMood.ROMANTIC, PhotoMood.COZY, PhotoMood.EMOTIONAL, PhotoMood.DREAMY, PhotoMood.VINTAGE, PhotoMood.FRESH];
-  final times = [PhotoTimeTag.AFTERNOON, PhotoTimeTag.SUNSET, PhotoTimeTag.MORNING, PhotoTimeTag.NIGHT, PhotoTimeTag.AFTERNOON, PhotoTimeTag.SUNSET];
-  final types = [PhotoType.FULL_BODY, PhotoType.SELFIE, PhotoType.UPPER_BODY, PhotoType.LANDSCAPE, PhotoType.FULL_BODY, PhotoType.SELFIE];
-  final crowds = [CrowdLevel.NORMAL, CrowdLevel.RELAXED, CrowdLevel.CROWDED, CrowdLevel.NORMAL, CrowdLevel.RELAXED, CrowdLevel.NORMAL];
-  final followers = [1240, 3870, 520, 9100, 280, 6430, 1100, 4200, 760, 18500, 390, 2200];
-
-  final likeCounts = [12, 34, 7, 58, 3, 21, 9, 45, 16, 82, 5, 27];
-
-  return List.generate(12, (i) => _CommunityPost(
-    photoId: i + 1,
-    id: 'f$i',
-    imageUrl: 'https://picsum.photos/seed/follow$i/400/400',
-    authorName: names[i % names.length],
-    authorAvatarUrl: 'https://picsum.photos/seed/avatar$i/100/100',
-    followerCount: followers[i % followers.length],
-    location: locations[i % locations.length],
-    hashtags: tagSets[i % tagSets.length],
-    mood: moods[i % moods.length],
-    timeTag: times[i % times.length],
-    photoType: types[i % types.length],
-    crowdLevel: crowds[i % crowds.length],
-    likeCount: likeCounts[i % likeCounts.length],
-  ));
-}
-
 List<_CommunityPost> _popularMock() {
   final names = ['인기작가1', '스냅유저', '트렌드세터', '베스트컷', '핫픽커'];
   final locations = ['남산타워', '광화문', '동대문DDP', '서울숲', '인사동', '창덕궁'];
@@ -318,7 +282,7 @@ class _CommunityScreenState extends State<CommunityScreen>
           : TabBarView(
               controller: _tabController,
               children: [
-                _PostGrid(posts: _followingMock()),
+                const _FollowingFeed(),
                 _PostGrid(posts: _popularMock()),
               ],
             ),
@@ -522,6 +486,86 @@ class _InitialAvatar extends StatelessWidget {
   }
 }
 
+class _FollowingFeed extends StatefulWidget {
+  const _FollowingFeed();
+
+  @override
+  State<_FollowingFeed> createState() => _FollowingFeedState();
+}
+
+class _FollowingFeedState extends State<_FollowingFeed> {
+  List<_CommunityPost> _posts = [];
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final photos = await context.read<CommunityService>().getFollowingFeed();
+      if (!mounted) return;
+      setState(() => _posts = photos.map(_fromPhoto).toList());
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = e is ApiException ? e.message : '피드를 불러오지 못했습니다.');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  _CommunityPost _fromPhoto(FollowingPhoto p) => _CommunityPost(
+        photoId: p.photoId,
+        id: 'api_${p.photoId}',
+        imageUrl: _resolveUrl(p.photoUrl),
+        authorName: p.nickname,
+        authorAvatarUrl: p.profileImage ?? '',
+        followerCount: 0,
+        location: '',
+        hashtags: [p.mood.label, p.timeTag.label],
+        mood: p.mood,
+        timeTag: p.timeTag,
+        photoType: p.photoType,
+        crowdLevel: p.crowdLevel,
+        likeCount: 0,
+      );
+
+  String _resolveUrl(String url) {
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    if (url.startsWith('/')) return '${ApiClient.baseUrl}$url';
+    return '${ApiClient.baseUrl}/$url';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator(color: AppColors.primaryPink));
+    }
+    if (_error != null) {
+      return _SearchEmptyState(
+        icon: Icons.error_outline,
+        title: _error!,
+        actionLabel: '다시 시도',
+        onAction: _load,
+      );
+    }
+    if (_posts.isEmpty) {
+      return const _SearchEmptyState(
+        icon: Icons.photo_camera_outlined,
+        title: '팔로우하는 사람들의 최근 사진이 없습니다.',
+      );
+    }
+    return _PostGrid(posts: _posts);
+  }
+}
+
 class _SearchEmptyState extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -649,42 +693,45 @@ class _PostTileState extends State<_PostTile> {
                   errorBuilder: (ctx, err, stack) =>
                       Container(color: AppColors.illustrationBox),
                 ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4),
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.bottomCenter,
-                        end: Alignment.topCenter,
-                        colors: [Color(0xBB000000), Colors.transparent],
+                if (widget.post.authorName.isNotEmpty)
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4),
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
+                          colors: [Color(0xBB000000), Colors.transparent],
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 7,
+                            backgroundColor: AppColors.illustrationBox,
+                            backgroundImage: widget.post.authorAvatarUrl.isNotEmpty
+                                ? NetworkImage(widget.post.authorAvatarUrl)
+                                : null,
+                          ),
+                          const SizedBox(width: 3),
+                          Expanded(
+                            child: Text(
+                              widget.post.authorName,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 7,
-                          backgroundImage: NetworkImage(widget.post.authorAvatarUrl),
-                          backgroundColor: AppColors.illustrationBox,
-                        ),
-                        const SizedBox(width: 3),
-                        Expanded(
-                          child: Text(
-                            widget.post.authorName,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
                   ),
-                ),
                 Positioned(
                   top: 4,
                   right: 4,
@@ -722,42 +769,46 @@ class _PostTileState extends State<_PostTile> {
               ],
             ),
           ),
-          Container(
-            color: AppColors.background,
-            padding: const EdgeInsets.fromLTRB(4, 3, 4, 2),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.location_on, size: 9, color: AppColors.primaryPink),
-                    const SizedBox(width: 1),
-                    Expanded(
-                      child: Text(
-                        widget.post.location,
-                        style: const TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textMain,
+          if (widget.post.location.isNotEmpty || widget.post.hashtags.isNotEmpty)
+            Container(
+              color: AppColors.background,
+              padding: const EdgeInsets.fromLTRB(4, 3, 4, 2),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (widget.post.location.isNotEmpty)
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on, size: 9, color: AppColors.primaryPink),
+                        const SizedBox(width: 1),
+                        Expanded(
+                          child: Text(
+                            widget.post.location,
+                            style: const TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textMain,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      ],
                     ),
-                  ],
-                ),
-                const SizedBox(height: 1),
-                Text(
-                  widget.post.hashtags.map((t) => '#$t').join(' '),
-                  style: const TextStyle(
-                    fontSize: 8,
-                    color: AppColors.textMuted,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                ),
-              ],
+                  if (widget.post.location.isNotEmpty && widget.post.hashtags.isNotEmpty)
+                    const SizedBox(height: 1),
+                  if (widget.post.hashtags.isNotEmpty)
+                    Text(
+                      widget.post.hashtags.map((t) => '#$t').join(' '),
+                      style: const TextStyle(
+                        fontSize: 8,
+                        color: AppColors.textMuted,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                ],
+              ),
             ),
-          ),
         ],
       ),
     );

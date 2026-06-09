@@ -1,3 +1,68 @@
+import '../photo/photo_models.dart';
+
+class FollowingPhoto {
+  final int photoId;
+  final int userId;
+  final String nickname;
+  final String? profileImage;
+  final int? photoSpotId;
+  final String photoUrl;
+  final String? tip;
+  final PhotoMood mood;
+  final PhotoTimeTag timeTag;
+  final PhotoType photoType;
+  final CrowdLevel crowdLevel;
+  final PhotoVisibility photoVisibility;
+  final String createdAt;
+
+  const FollowingPhoto({
+    required this.photoId,
+    required this.userId,
+    required this.nickname,
+    this.profileImage,
+    this.photoSpotId,
+    required this.photoUrl,
+    this.tip,
+    required this.mood,
+    required this.timeTag,
+    required this.photoType,
+    required this.crowdLevel,
+    required this.photoVisibility,
+    required this.createdAt,
+  });
+
+  factory FollowingPhoto.fromJson(Map<String, dynamic> json) => FollowingPhoto(
+        photoId: (json['photoId'] as num).toInt(),
+        userId: (json['userId'] as num).toInt(),
+        nickname: (json['nickname'] ?? '사용자').toString(),
+        profileImage: json['profileImage'] as String?,
+        photoSpotId: (json['photoSpotId'] as num?)?.toInt(),
+        photoUrl: json['photoUrl'] as String,
+        tip: json['tip'] as String?,
+        mood: PhotoMood.values.firstWhere(
+          (e) => e.name == json['mood'],
+          orElse: () => PhotoMood.CALM,
+        ),
+        timeTag: PhotoTimeTag.values.firstWhere(
+          (e) => e.name == json['timeTag'],
+          orElse: () => PhotoTimeTag.AFTERNOON,
+        ),
+        photoType: PhotoType.values.firstWhere(
+          (e) => e.name == json['photoType'],
+          orElse: () => PhotoType.LANDSCAPE,
+        ),
+        crowdLevel: CrowdLevel.values.firstWhere(
+          (e) => e.name == json['crowdLevel'],
+          orElse: () => CrowdLevel.NORMAL,
+        ),
+        photoVisibility: PhotoVisibility.values.firstWhere(
+          (e) => e.name == json['photoVisibility'],
+          orElse: () => PhotoVisibility.PUBLIC,
+        ),
+        createdAt: json['createdAt'] as String,
+      );
+}
+
 class CommunityUser {
   final int userId;
   final String email;

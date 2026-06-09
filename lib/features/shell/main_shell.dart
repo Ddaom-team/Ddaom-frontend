@@ -15,26 +15,22 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
-  late final List<Widget> _screens;
+  int _myPageRefreshKey = 0;
 
   @override
-  void initState() {
-    super.initState();
-    _screens = [
+  Widget build(BuildContext context) {
+    final screens = [
       const HomeScreen(),
       const CommunityScreen(),
       CameraScreen(onBack: () => setState(() => _currentIndex = 0)),
       const _PlaceholderScreen(label: '저장한 장소'),
-      const MyPageScreen(),
+      MyPageScreen(key: ValueKey(_myPageRefreshKey)),
     ];
-  }
 
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
-        children: _screens,
+        children: screens,
       ),
       bottomNavigationBar: _currentIndex == 2 ? null : Container(
         decoration: const BoxDecoration(
@@ -43,7 +39,10 @@ class _MainShellState extends State<MainShell> {
         ),
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
-          onTap: (i) => setState(() => _currentIndex = i),
+          onTap: (i) => setState(() {
+            if (i == 4) _myPageRefreshKey++;
+            _currentIndex = i;
+          }),
           type: BottomNavigationBarType.fixed,
           backgroundColor: AppColors.navBar,
           selectedItemColor: AppColors.primaryPink,
