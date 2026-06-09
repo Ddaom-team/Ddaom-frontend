@@ -11,6 +11,7 @@ import 'core/place_repository.dart';
 import 'features/home/home_provider.dart';
 import 'features/mypage/mypage_provider.dart';
 import 'features/auth/auth_service.dart';
+import 'features/community/community_service.dart';
 import 'features/auth/login_screen.dart';
 import 'features/shell/main_shell.dart';
 
@@ -40,6 +41,7 @@ class DdaomApp extends StatelessWidget {
       providers: [
         Provider<SecureStorage>.value(value: storage),
         Provider<ApiClient>.value(value: api),
+        Provider<CommunityService>(create: (ctx) => CommunityService(ctx.read<ApiClient>())),
         ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
         ChangeNotifierProvider<HomeProvider>(create: (_) => HomeProvider(MockPlaceRepository())),
         ChangeNotifierProvider<MyPageProvider>(

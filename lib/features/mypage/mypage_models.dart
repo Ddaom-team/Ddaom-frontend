@@ -1,12 +1,12 @@
 class UserProfile {
-  final String id;
+  final int userId;
   final String name;
   final String? avatarUrl;
   final int followingCount;
   final int followerCount;
 
   const UserProfile({
-    required this.id,
+    required this.userId,
     required this.name,
     this.avatarUrl,
     required this.followingCount,
@@ -14,19 +14,24 @@ class UserProfile {
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
-    id: json['id'].toString(),
-    name: (json['name'] ?? json['email'] ?? '사용자').toString(),
-    avatarUrl: json['avatarUrl'] as String?,
-    followingCount: json['followingCount'] as int? ?? 0,
-    followerCount: json['followerCount'] as int? ?? 0,
+    userId: (json['userId'] as num).toInt(),
+    name: (json['nickname'] ?? json['name'] ?? json['email'] ?? '사용자').toString(),
+    avatarUrl: (json['profileImage'] ?? json['avatarUrl']) as String?,
+    followingCount: (json['followingCount'] as num?)?.toInt() ?? 0,
+    followerCount: (json['followerCount'] as num?)?.toInt() ?? 0,
   );
 
-  UserProfile copyWith({String? name, String? avatarUrl}) => UserProfile(
-    id: id,
+  UserProfile copyWith({
+    String? name,
+    String? avatarUrl,
+    int? followingCount,
+    int? followerCount,
+  }) => UserProfile(
+    userId: userId,
     name: name ?? this.name,
     avatarUrl: avatarUrl ?? this.avatarUrl,
-    followingCount: followingCount,
-    followerCount: followerCount,
+    followingCount: followingCount ?? this.followingCount,
+    followerCount: followerCount ?? this.followerCount,
   );
 }
 

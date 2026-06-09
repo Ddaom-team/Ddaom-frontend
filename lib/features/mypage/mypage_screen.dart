@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/app_theme.dart';
+import '../auth/auth_provider.dart';
 import 'mypage_provider.dart';
 import 'widgets/liked_zones_tab.dart';
 import 'widgets/my_photos_tab.dart';
@@ -35,7 +36,48 @@ class _MyPageScreenState extends State<MyPageScreen> {
           backgroundColor: AppColors.background,
           elevation: 0,
           actions: [
-            IconButton(icon: const Icon(Icons.settings_outlined), onPressed: () {}),
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.settings_outlined),
+              onSelected: (value) async {
+                if (value == 'logout') {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('로그아웃'),
+                      content: const Text('정말 로그아웃 하시겠어요?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: const Text('취소'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: const Text('로그아웃', style: TextStyle(color: AppColors.primaryPink)),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirm == true && context.mounted) {
+                    await context.read<AuthProvider>().signOut();
+                    if (context.mounted) {
+                      Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
+                    }
+                  }
+                }
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(
+                  value: 'logout',
+                  child: Row(
+                    children: [
+                      Icon(Icons.logout, size: 20),
+                      SizedBox(width: 8),
+                      Text('로그아웃'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
             IconButton(icon: const Icon(Icons.notifications_none), onPressed: () {}),
           ],
         ),

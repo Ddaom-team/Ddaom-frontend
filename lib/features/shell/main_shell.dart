@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/app_theme.dart';
 import '../../screens/camera_screen.dart';
+import '../community/community_screen.dart';
 import '../home/home_screen.dart';
 import '../mypage/mypage_screen.dart';
 
@@ -21,7 +22,7 @@ class _MainShellState extends State<MainShell> {
     super.initState();
     _screens = [
       const HomeScreen(),
-      const _PlaceholderScreen(label: '검색'),
+      const CommunityScreen(),
       CameraScreen(onBack: () => setState(() => _currentIndex = 0)),
       const _PlaceholderScreen(label: '저장한 장소'),
       const MyPageScreen(),
@@ -50,7 +51,7 @@ class _MainShellState extends State<MainShell> {
           elevation: 0,
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: '홈'),
-            BottomNavigationBarItem(icon: Icon(Icons.search), label: '검색'),
+            BottomNavigationBarItem(icon: Icon(Icons.people_outline), label: '커뮤니티'),
             BottomNavigationBarItem(icon: _CameraNavIcon(), label: ''),
             BottomNavigationBarItem(icon: Icon(Icons.bookmark_border), label: '저장'),
             BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: '마이'),
