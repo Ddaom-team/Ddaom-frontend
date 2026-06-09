@@ -7,7 +7,6 @@ import 'mypage_provider.dart';
 import 'widgets/liked_zones_tab.dart';
 import 'widgets/my_photos_tab.dart';
 import 'widgets/profile_header.dart';
-import 'widgets/saved_places_tab.dart';
 
 class MyPageScreen extends StatefulWidget {
   const MyPageScreen({super.key});
@@ -30,7 +29,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
     final provider = context.watch<MyPageProvider>();
 
     return DefaultTabController(
-      length: 3,
+      length: 2,
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: AppColors.background,
@@ -94,7 +93,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
                       ),
                     ],
                     body: const TabBarView(
-                      children: [SavedPlacesTab(), MyPhotosTab(), LikedZonesTab()],
+                      children: [MyPhotosTab(), LikedZonesTab()],
                     ),
                   ),
       ),
@@ -138,7 +137,6 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
         unselectedLabelColor: AppColors.textMuted,
         indicatorColor: AppColors.primaryPink,
         tabs: [
-          Tab(text: '저장한 포토존'),
           Tab(text: '내가 올린 사진'),
           Tab(text: '좋아요'),
         ],

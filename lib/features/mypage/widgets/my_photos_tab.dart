@@ -1,25 +1,24 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/app_theme.dart';
 import '../mypage_models.dart';
+import 'photo_grid_tile.dart';
 
 class MyPhotosTab extends StatelessWidget {
   const MyPhotosTab({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final photos = GridPhoto.mockList();
+    final photos = GridPhoto.mockMyPhotos();
     return GridView.builder(
       padding: const EdgeInsets.all(2),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3, crossAxisSpacing: 2, mainAxisSpacing: 2,
+        crossAxisCount: 3,
+        crossAxisSpacing: 2,
+        mainAxisSpacing: 2,
+        childAspectRatio: 0.72,
       ),
       itemCount: photos.length,
-      itemBuilder: (context, i) => Image.network(
-        photos[i].imageUrl, fit: BoxFit.cover,
-        errorBuilder: (ctx, err, stack) =>
-            Container(color: AppColors.illustrationBox),
-      ),
+      itemBuilder: (context, i) => PhotoGridTile(photo: photos[i], showAuthor: false),
     );
   }
 }
