@@ -79,6 +79,63 @@ extension PhotoVisibilityLabel on PhotoVisibility {
   }
 }
 
+class PhotoInfo {
+  final int photoId;
+  final int userId;
+  final int? photoSpotId;
+  final String photoUrl;
+  final String? tip;
+  final PhotoMood mood;
+  final PhotoTimeTag timeTag;
+  final PhotoType photoType;
+  final CrowdLevel crowdLevel;
+  final PhotoVisibility photoVisibility;
+  final String createdAt;
+
+  const PhotoInfo({
+    required this.photoId,
+    required this.userId,
+    this.photoSpotId,
+    required this.photoUrl,
+    this.tip,
+    required this.mood,
+    required this.timeTag,
+    required this.photoType,
+    required this.crowdLevel,
+    required this.photoVisibility,
+    required this.createdAt,
+  });
+
+  factory PhotoInfo.fromJson(Map<String, dynamic> json) => PhotoInfo(
+        photoId: (json['photoId'] as num).toInt(),
+        userId: (json['userId'] as num).toInt(),
+        photoSpotId: (json['photoSpotId'] as num?)?.toInt(),
+        photoUrl: json['photoUrl'] as String,
+        tip: json['tip'] as String?,
+        mood: PhotoMood.values.firstWhere(
+          (e) => e.name == json['mood'],
+          orElse: () => PhotoMood.CALM,
+        ),
+        timeTag: PhotoTimeTag.values.firstWhere(
+          (e) => e.name == json['timeTag'],
+          orElse: () => PhotoTimeTag.AFTERNOON,
+        ),
+        photoType: PhotoType.values.firstWhere(
+          (e) => e.name == json['photoType'],
+          orElse: () => PhotoType.LANDSCAPE,
+        ),
+        crowdLevel: CrowdLevel.values.firstWhere(
+          (e) => e.name == json['crowdLevel'],
+          orElse: () => CrowdLevel.NORMAL,
+        ),
+        photoVisibility: PhotoVisibility.values.firstWhere(
+          (e) => e.name == json['photoVisibility'],
+          orElse: () => PhotoVisibility.PUBLIC,
+        ),
+        createdAt: json['createdAt'] as String,
+      );
+}
+
 class PhotoUploadRequest {
   final String? photoSpotId;
   final String? tip;

@@ -10,6 +10,19 @@ class PhotoService {
 
   PhotoService(this._api);
 
+  Future<PhotoInfo> getPhoto(int photoId) async {
+    final res = await _api.dio.get('/api/photos/$photoId');
+    return PhotoInfo.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<List<PhotoInfo>> getMyPhotos() async {
+    final res = await _api.dio.get('/api/photos/me');
+    final items = res.data as List<dynamic>;
+    return items
+        .map((json) => PhotoInfo.fromJson(json as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<void> uploadPhoto({
     required String filePath,
     required PhotoUploadRequest request,

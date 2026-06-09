@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/app_theme.dart';
 import '../../screens/camera_screen.dart';
+import '../community/community_screen.dart';
 import '../home/home_screen.dart';
 import '../mypage/mypage_screen.dart';
 
@@ -14,26 +15,22 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
-  late final List<Widget> _screens;
-
-  @override
-  void initState() {
-    super.initState();
-    _screens = [
-      const HomeScreen(),
-      const _PlaceholderScreen(label: '검색'),
-      CameraScreen(onBack: () => setState(() => _currentIndex = 0)),
-      const _PlaceholderScreen(label: '저장한 장소'),
-      const MyPageScreen(),
-    ];
-  }
+  int _myPageRefreshKey = 0;
 
   @override
   Widget build(BuildContext context) {
+    final screens = [
+      const HomeScreen(),
+      const CommunityScreen(),
+      CameraScreen(onBack: () => setState(() => _currentIndex = 0)),
+      const _PlaceholderScreen(label: '저장한 장소'),
+      MyPageScreen(key: ValueKey(_myPageRefreshKey)),
+    ];
+
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
-        children: _screens,
+        children: screens,
       ),
       bottomNavigationBar: _currentIndex == 2 ? null : Container(
         decoration: const BoxDecoration(
@@ -42,7 +39,10 @@ class _MainShellState extends State<MainShell> {
         ),
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
-          onTap: (i) => setState(() => _currentIndex = i),
+          onTap: (i) => setState(() {
+            if (i == 4) _myPageRefreshKey++;
+            _currentIndex = i;
+          }),
           type: BottomNavigationBarType.fixed,
           backgroundColor: AppColors.navBar,
           selectedItemColor: AppColors.primaryPink,
@@ -50,7 +50,7 @@ class _MainShellState extends State<MainShell> {
           elevation: 0,
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: '홈'),
-            BottomNavigationBarItem(icon: Icon(Icons.search), label: '검색'),
+            BottomNavigationBarItem(icon: Icon(Icons.people_outline), label: '커뮤니티'),
             BottomNavigationBarItem(icon: _CameraNavIcon(), label: ''),
             BottomNavigationBarItem(icon: Icon(Icons.bookmark_border), label: '저장'),
             BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: '마이'),

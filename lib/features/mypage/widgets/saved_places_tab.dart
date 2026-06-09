@@ -1,24 +1,16 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/app_theme.dart';
-import '../mypage_models.dart';
 
 class SavedPlacesTab extends StatelessWidget {
   const SavedPlacesTab({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final photos = GridPhoto.mockList();
-    return GridView.builder(
-      padding: const EdgeInsets.all(2),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3, crossAxisSpacing: 2, mainAxisSpacing: 2,
-      ),
-      itemCount: photos.length,
-      itemBuilder: (context, i) => Image.network(
-        photos[i].imageUrl, fit: BoxFit.cover,
-        errorBuilder: (ctx, err, stack) =>
-            Container(color: AppColors.illustrationBox),
+    return const Center(
+      child: Text(
+        '저장한 포토존이 없습니다.',
+        style: TextStyle(color: AppColors.textMuted),
       ),
     );
   }

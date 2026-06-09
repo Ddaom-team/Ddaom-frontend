@@ -22,7 +22,15 @@ class MyPageProvider extends ChangeNotifier {
     try {
       final res = await _api.dio.get('/api/users/me');
       // 인터셉터가 이미 { code, message, data } 래퍼를 벗겨서 data만 전달함
-      _profile = UserProfile.fromJson(res.data as Map<String, dynamic>);
+      final profile = UserProfile.fromJson(res.data as Map<String, dynamic>);
+
+      final countRes = await _api.dio.get('/api/follows/${profile.userId}/counts');
+      final counts = countRes.data as Map<String, dynamic>;
+
+      _profile = profile.copyWith(
+        followerCount: (counts['followerCount'] as num?)?.toInt() ?? 0,
+        followingCount: (counts['followingCount'] as num?)?.toInt() ?? 0,
+      );
     } catch (e) {
       _error = e.toString();
     } finally {
