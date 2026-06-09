@@ -25,13 +25,4 @@ class CommunityService {
     await _api.dio.delete('/api/follows/$userId');
   }
 
-  Future<Map<String, dynamic>> likePhoto(int photoId) async {
-    final res = await _api.dio.post('/api/photos/$photoId/likes');
-    return res.data['data'] as Map<String, dynamic>;
-  }
-
-  Future<Map<String, dynamic>> unlikePhoto(int photoId) async {
-    final res = await _api.dio.delete('/api/photos/$photoId/likes');
-    return res.data['data'] as Map<String, dynamic>;
-  }
 }

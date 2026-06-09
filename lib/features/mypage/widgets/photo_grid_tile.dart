@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import '../../../core/app_theme.dart';
-import '../../community/community_service.dart';
+import '../../community/community_post_detail_screen.dart';
 import '../mypage_models.dart';
 
 class PhotoGridTile extends StatefulWidget {
@@ -18,7 +17,6 @@ class PhotoGridTile extends StatefulWidget {
 class _PhotoGridTileState extends State<PhotoGridTile> {
   late bool _liked;
   late int _likeCount;
-  bool _likeLoading = false;
 
   @override
   void initState() {
@@ -27,41 +25,27 @@ class _PhotoGridTileState extends State<PhotoGridTile> {
     _likeCount = widget.photo.likeCount;
   }
 
-  Future<void> _toggleLike() async {
-    if (_likeLoading) return;
-    final wasLiked = _liked;
+  void _toggleLike() {
     setState(() {
-      _liked = !wasLiked;
-      _likeCount += wasLiked ? -1 : 1;
-      _likeLoading = true;
+      _liked = !_liked;
+      _likeCount += _liked ? 1 : -1;
     });
+  }
 
-    try {
-      final service = context.read<CommunityService>();
-      final result = wasLiked
-          ? await service.unlikePhoto(widget.photo.photoId)
-          : await service.likePhoto(widget.photo.photoId);
-      if (mounted) {
-        setState(() {
-          _liked = result['liked'] as bool;
-          _likeCount = (result['likeCount'] as num).toInt();
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _liked = wasLiked;
-          _likeCount += wasLiked ? 1 : -1;
-        });
-      }
-    } finally {
-      if (mounted) setState(() => _likeLoading = false);
-    }
+  void _openDetail(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CommunityPostDetailScreen(photoId: widget.photo.photoId),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return GestureDetector(
+      onTap: () => _openDetail(context),
+      child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
@@ -182,6 +166,7 @@ class _PhotoGridTileState extends State<PhotoGridTile> {
           ),
         ),
       ],
+    ),
     );
   }
 }

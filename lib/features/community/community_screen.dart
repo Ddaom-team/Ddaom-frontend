@@ -601,7 +601,6 @@ class _PostTile extends StatefulWidget {
 class _PostTileState extends State<_PostTile> {
   late bool _liked;
   late int _likeCount;
-  bool _likeLoading = false;
 
   @override
   void initState() {
@@ -610,36 +609,11 @@ class _PostTileState extends State<_PostTile> {
     _likeCount = widget.post.likeCount;
   }
 
-  Future<void> _toggleLike() async {
-    if (_likeLoading) return;
-    final wasLiked = _liked;
+  void _toggleLike() {
     setState(() {
-      _liked = !wasLiked;
-      _likeCount += wasLiked ? -1 : 1;
-      _likeLoading = true;
+      _liked = !_liked;
+      _likeCount += _liked ? 1 : -1;
     });
-
-    try {
-      final service = context.read<CommunityService>();
-      final result = wasLiked
-          ? await service.unlikePhoto(widget.post.photoId)
-          : await service.likePhoto(widget.post.photoId);
-      if (mounted) {
-        setState(() {
-          _liked = result['liked'] as bool;
-          _likeCount = (result['likeCount'] as num).toInt();
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _liked = wasLiked;
-          _likeCount += wasLiked ? 1 : -1;
-        });
-      }
-    } finally {
-      if (mounted) setState(() => _likeLoading = false);
-    }
   }
 
   void _openDetail(BuildContext context) {
@@ -647,16 +621,12 @@ class _PostTileState extends State<_PostTile> {
       context,
       MaterialPageRoute(
         builder: (_) => CommunityPostDetailScreen(
-          imageUrl: widget.post.imageUrl,
+          photoId: widget.post.photoId,
           authorName: widget.post.authorName,
           authorAvatarUrl: widget.post.authorAvatarUrl,
           followerCount: widget.post.followerCount,
           location: widget.post.location,
           hashtags: widget.post.hashtags,
-          mood: widget.post.mood,
-          timeTag: widget.post.timeTag,
-          photoType: widget.post.photoType,
-          crowdLevel: widget.post.crowdLevel,
         ),
       ),
     );

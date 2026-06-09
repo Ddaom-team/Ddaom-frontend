@@ -1,3 +1,6 @@
+import '../../core/api_client.dart';
+import '../photo/photo_models.dart';
+
 class UserProfile {
   final int userId;
   final String name;
@@ -57,6 +60,23 @@ class GridPhoto {
     required this.likeCount,
     this.liked = false,
   });
+
+  factory GridPhoto.fromPhotoInfo(PhotoInfo photo) {
+    final url = photo.photoUrl;
+    final imageUrl = (url.startsWith('http://') || url.startsWith('https://'))
+        ? url
+        : '${ApiClient.baseUrl}$url';
+    return GridPhoto(
+      photoId: photo.photoId,
+      id: 'photo_${photo.photoId}',
+      imageUrl: imageUrl,
+      authorName: '',
+      authorAvatarUrl: '',
+      location: '',
+      hashtags: const [],
+      likeCount: 0,
+    );
+  }
 
   static List<GridPhoto> mockMyPhotos() {
     final locations = ['경복궁', '북촌한옥마을', '성수동', '홍대거리', '한강공원', '망원시장', '서울숲', '인사동', '남산타워'];

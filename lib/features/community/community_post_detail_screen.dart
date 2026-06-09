@@ -1,33 +1,64 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/app_theme.dart';
 import '../../features/photo/photo_models.dart';
+import '../../features/photo/photo_service.dart';
 
-class CommunityPostDetailScreen extends StatelessWidget {
-  final String imageUrl;
-  final String authorName;
-  final String authorAvatarUrl;
-  final int followerCount;
-  final String location;
+class CommunityPostDetailScreen extends StatefulWidget {
+  final int photoId;
+  final String? authorName;
+  final String? authorAvatarUrl;
+  final int? followerCount;
+  final String? location;
   final List<String> hashtags;
-  final PhotoMood mood;
-  final PhotoTimeTag timeTag;
-  final PhotoType photoType;
-  final CrowdLevel crowdLevel;
 
   const CommunityPostDetailScreen({
     super.key,
-    required this.imageUrl,
-    required this.authorName,
-    required this.authorAvatarUrl,
-    required this.followerCount,
-    required this.location,
-    required this.hashtags,
-    required this.mood,
-    required this.timeTag,
-    required this.photoType,
-    required this.crowdLevel,
+    required this.photoId,
+    this.authorName,
+    this.authorAvatarUrl,
+    this.followerCount,
+    this.location,
+    this.hashtags = const [],
   });
+
+  @override
+  State<CommunityPostDetailScreen> createState() => _CommunityPostDetailScreenState();
+}
+
+class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
+  PhotoInfo? _photo;
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final photo = await context.read<PhotoService>().getPhoto(widget.photoId);
+      if (!mounted) return;
+      setState(() => _photo = photo);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = e.toString());
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  String _resolveImageUrl(String url) {
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    return 'http://192.168.45.89:8080$url';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,35 +72,69 @@ class CommunityPostDetailScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Column(
+      body: _loading
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primaryPink))
+          : _error != null
+              ? _buildError()
+              : _buildContent(),
+    );
+  }
+
+  Widget _buildError() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildImage(),
-                  _buildUserSection(),
-                  _buildDivider(),
-                  _buildLocationSection(),
-                  _buildDivider(),
-                  _buildTagsSection(),
-                  const SizedBox(height: 24),
-                ],
-              ),
-            ),
+          Text(_error!, style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
+          const SizedBox(height: 12),
+          ElevatedButton(
+            onPressed: _load,
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryPink),
+            child: const Text('다시 시도', style: TextStyle(color: Colors.white)),
           ),
-          _buildDdaoggiButton(context),
         ],
       ),
     );
   }
 
-  Widget _buildImage() {
+  Widget _buildContent() {
+    final photo = _photo!;
+    return Column(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildImage(photo.photoUrl),
+                if (widget.authorName != null) ...[
+                  _buildUserSection(),
+                  _buildDivider(),
+                ],
+                if (widget.location != null) ...[
+                  _buildLocationSection(),
+                  _buildDivider(),
+                ],
+                if (photo.tip != null && photo.tip!.isNotEmpty) ...[
+                  _buildTipSection(photo.tip!),
+                  _buildDivider(),
+                ],
+                _buildTagsSection(photo),
+                const SizedBox(height: 24),
+              ],
+            ),
+          ),
+        ),
+        _buildDdaoggiButton(context),
+      ],
+    );
+  }
+
+  Widget _buildImage(String photoUrl) {
     return AspectRatio(
       aspectRatio: 1,
       child: Image.network(
-        imageUrl,
+        _resolveImageUrl(photoUrl),
         fit: BoxFit.cover,
         errorBuilder: (ctx, err, stack) =>
             Container(color: AppColors.illustrationBox),
@@ -84,7 +149,7 @@ class CommunityPostDetailScreen extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 22,
-            backgroundImage: NetworkImage(authorAvatarUrl),
+            backgroundImage: NetworkImage(widget.authorAvatarUrl!),
             backgroundColor: AppColors.illustrationBox,
           ),
           const SizedBox(width: 12),
@@ -92,21 +157,20 @@ class CommunityPostDetailScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                authorName,
+                widget.authorName!,
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textMain,
                 ),
               ),
-              const SizedBox(height: 2),
-              Text(
-                '팔로워 ${_formatCount(followerCount)}명',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textMuted,
+              if (widget.followerCount != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  '팔로워 ${_formatCount(widget.followerCount!)}명',
+                  style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
                 ),
-              ),
+              ],
             ],
           ),
           const Spacer(),
@@ -116,16 +180,11 @@ class CommunityPostDetailScreen extends StatelessWidget {
               foregroundColor: AppColors.primaryPink,
               side: const BorderSide(color: AppColors.primaryPink),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               minimumSize: Size.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            child: const Text(
-              '팔로우',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-            ),
+            child: const Text('팔로우', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -140,11 +199,7 @@ class CommunityPostDetailScreen extends StatelessWidget {
         children: [
           const Text(
             '촬영 장소',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textMuted,
-            ),
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textMuted),
           ),
           const SizedBox(height: 8),
           Row(
@@ -152,23 +207,16 @@ class CommunityPostDetailScreen extends StatelessWidget {
               const Icon(Icons.location_on, size: 16, color: AppColors.primaryPink),
               const SizedBox(width: 4),
               Text(
-                location,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textMain,
-                ),
+                widget.location!,
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textMain),
               ),
             ],
           ),
-          if (hashtags.isNotEmpty) ...[
+          if (widget.hashtags.isNotEmpty) ...[
             const SizedBox(height: 6),
             Text(
-              hashtags.map((t) => '#$t').join('  '),
-              style: const TextStyle(
-                fontSize: 13,
-                color: AppColors.primaryPink,
-              ),
+              widget.hashtags.map((t) => '#$t').join('  '),
+              style: const TextStyle(fontSize: 13, color: AppColors.primaryPink),
             ),
           ],
         ],
@@ -176,12 +224,32 @@ class CommunityPostDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTagsSection() {
+  Widget _buildTipSection(String tip) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '촬영 팁',
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textMuted),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            tip,
+            style: const TextStyle(fontSize: 14, color: AppColors.textMain, height: 1.5),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTagsSection(PhotoInfo photo) {
     final categories = [
-      ('분위기', mood.label),
-      ('시간대', timeTag.label),
-      ('사진 유형', photoType.label),
-      ('혼잡도', crowdLevel.label),
+      ('분위기', photo.mood.label),
+      ('시간대', photo.timeTag.label),
+      ('사진 유형', photo.photoType.label),
+      ('혼잡도', photo.crowdLevel.label),
     ];
 
     return Padding(
@@ -191,19 +259,13 @@ class CommunityPostDetailScreen extends StatelessWidget {
         children: [
           const Text(
             '사진 정보',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textMuted,
-            ),
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textMuted),
           ),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: categories.map((entry) {
-              final label = entry.$1;
-              final value = entry.$2;
               return Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                 decoration: BoxDecoration(
@@ -214,14 +276,11 @@ class CommunityPostDetailScreen extends StatelessWidget {
                   text: TextSpan(
                     children: [
                       TextSpan(
-                        text: '$label  ',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textMuted,
-                        ),
+                        text: '${entry.$1}  ',
+                        style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
                       ),
                       TextSpan(
-                        text: value,
+                        text: entry.$2,
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -255,18 +314,12 @@ class CommunityPostDetailScreen extends StatelessWidget {
             onPressed: () {},
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryPink,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               elevation: 0,
             ),
             child: const Text(
               '따오기',
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-              ),
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white),
             ),
           ),
         ),
