@@ -5,6 +5,7 @@ import '../../../core/app_theme.dart';
 import '../place_models.dart';
 import '../place_provider.dart';
 import 'photozone_card.dart';
+import '../photospot_create_screen.dart';
 
 class PhotozoneTab extends StatelessWidget {
   const PhotozoneTab({super.key});
@@ -17,6 +18,29 @@ class PhotozoneTab extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          child: SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () async {
+                final p = context.read<PlaceProvider>();
+                final created = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        PhotoSpotCreateScreen(placeId: p.placeId),
+                  ),
+                );
+                if (created == true) p.reload();
+              },
+              icon: const Icon(Icons.add_a_photo_outlined, size: 18),
+              label: const Text('포토존 등록'),
+              style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primaryPink),
+            ),
+          ),
+        ),
         SizedBox(
           height: 44,
           child: ListView.separated(

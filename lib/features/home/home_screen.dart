@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/app_theme.dart';
 import 'home_provider.dart';
 import '../search/search_screen.dart';
-import '../place/place_create_screen.dart';
+import '../place/place_search_screen.dart';
 import 'widgets/filter_chip_bar.dart';
 import 'widgets/home_map_view.dart';
 import 'widgets/popular_zone_list.dart';
@@ -55,7 +55,7 @@ class HomeScreen extends StatelessWidget {
             icon: const Icon(Icons.add),
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const PlaceCreateScreen()),
+              MaterialPageRoute(builder: (_) => const PlaceSearchScreen()),
             ),
           ),
           IconButton(

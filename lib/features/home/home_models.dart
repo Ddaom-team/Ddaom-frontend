@@ -1,5 +1,16 @@
 // lib/features/home/home_models.dart
-enum PlaceCategory { all, cafe, restaurant, popup, exhibition, nightView }
+enum PlaceCategory {
+  all,
+  cafe,
+  restaurant,
+  popup,
+  exhibition,
+  nightView,
+  entertainment,
+  bar,
+  shopping,
+  attraction,
+}
 
 extension PlaceCategoryLabel on PlaceCategory {
   String get label {
@@ -10,6 +21,10 @@ extension PlaceCategoryLabel on PlaceCategory {
       case PlaceCategory.popup: return '팝업';
       case PlaceCategory.exhibition: return '전시';
       case PlaceCategory.nightView: return '야경';
+      case PlaceCategory.entertainment: return '오락';
+      case PlaceCategory.bar: return '술집';
+      case PlaceCategory.shopping: return '쇼핑';
+      case PlaceCategory.attraction: return '명소';
     }
   }
 
@@ -20,6 +35,10 @@ extension PlaceCategoryLabel on PlaceCategory {
       case '팝업': return PlaceCategory.popup;
       case '전시': return PlaceCategory.exhibition;
       case '야경': return PlaceCategory.nightView;
+      case '오락': return PlaceCategory.entertainment;
+      case '술집': return PlaceCategory.bar;
+      case '쇼핑': return PlaceCategory.shopping;
+      case '명소': return PlaceCategory.attraction;
       default: return PlaceCategory.all;
     }
   }

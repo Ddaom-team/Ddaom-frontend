@@ -70,6 +70,9 @@ class HomeProvider extends ChangeNotifier {
     return _allPlaces.where((p) => p.category == _selectedCategory).toList();
   }
 
+  /// 등록된 전체 장소(중복 등록 검사용 — 카테고리 필터와 무관).
+  List<Place> get allPlaces => List.unmodifiable(_allPlaces);
+
   Future<void> loadPlaces() async {
     isLoading = true;
     error = null;

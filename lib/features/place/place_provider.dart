@@ -34,6 +34,9 @@ class PlaceProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 등록 등으로 데이터가 바뀐 뒤 상세를 다시 불러온다.
+  Future<void> reload() => _load();
+
   Future<void> _load() async {
     isLoading = true;
     notifyListeners();

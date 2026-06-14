@@ -3,8 +3,12 @@ import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/api_client.dart';
 import '../../../core/app_theme.dart';
+import '../../place/naver_place_search_service.dart';
 import '../../place/place_detail_screen.dart';
+import '../../place/place_registration.dart';
+import '../../place/widgets/naver_place_info_card.dart';
 import '../home_models.dart';
 import '../home_provider.dart';
 
@@ -17,6 +21,7 @@ class HomeMapView extends StatefulWidget {
 
 class _HomeMapViewState extends State<HomeMapView> {
   NaverMapController? _controller;
+  final _searchService = NaverPlaceSearchService();
   final Map<String, NMarker> _markers = {};
   final Map<String, NOverlayImage> _iconCache = {};
   NInfoWindow? _activeInfoWindow;
@@ -89,7 +94,88 @@ class _HomeMapViewState extends State<HomeMapView> {
         _enableLocationOverlay(controller);
       },
       onMapTapped: (_, latLng) => provider.clearSelection(),
+      onSymbolTapped: _onSymbolTapped,
     );
+  }
+
+  /// 네이버 지도 기본 POI 심볼(아직 등록 안 된 실제 장소)을 탭했을 때.
+  /// 이미 등록된 장소면 선택만(중복 등록 차단), 아니면 정보 카드 → 등록.
+  Future<void> _onSymbolTapped(NSymbolInfo symbol) async {
+    final provider = context.read<HomeProvider>();
+    final lat = symbol.position.latitude;
+    final lng = symbol.position.longitude;
+
+    final existing =
+        findRegisteredNearby(provider.allPlaces, lat, lng, name: symbol.caption);
+    if (existing != null) {
+      provider.selectPlace(existing.id);
+      return;
+    }
+
+    // 네이버 검색으로 카테고리·주소·전화 보강(좌표는 탭 위치를 권위값으로 사용).
+    // 검색이 실패해도 이름+좌표만으로 카드를 띄워 등록할 수 있게 한다.
+    List<NaverPlace> results = [];
+    try {
+      results = await _searchService.search(symbol.caption);
+    } catch (_) {}
+    final match = _nearestMatch(results, lat, lng);
+    final place = NaverPlace(
+      name: (match != null && match.name.isNotEmpty) ? match.name : symbol.caption,
+      category: match?.category ?? '',
+      roadAddress: match?.roadAddress ?? '',
+      address: match?.address ?? '',
+      telephone: match?.telephone,
+      lat: lat,
+      lng: lng,
+    );
+
+    if (!mounted) return;
+    showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => NaverPlaceInfoCard(
+        place: place,
+        onRegister: (category, address) {
+          Navigator.pop(context);
+          _registerFromMap(place, category, address);
+        },
+      ),
+    );
+  }
+
+  /// 탭한 위치에서 가장 가까운(약 200m 이내) 검색 결과. 없으면 null.
+  NaverPlace? _nearestMatch(List<NaverPlace> results, double lat, double lng) {
+    NaverPlace? best;
+    var bestDist = 0.003;
+    for (final r in results) {
+      final d = (r.lat - lat).abs() + (r.lng - lng).abs();
+      if (d < bestDist) {
+        bestDist = d;
+        best = r;
+      }
+    }
+    return best;
+  }
+
+  Future<void> _registerFromMap(
+      NaverPlace place, PlaceCategory category, String address) async {
+    final api = context.read<ApiClient>();
+    final provider = context.read<HomeProvider>();
+    final outcome = await registerNaverPlace(
+        api: api,
+        home: provider,
+        place: place,
+        category: category,
+        address: address);
+    if (!mounted) return;
+    final msg = switch (outcome) {
+      RegisterOutcome.success => '장소가 등록되었습니다.',
+      RegisterOutcome.duplicate => '이미 등록된 장소입니다.',
+      RegisterOutcome.failure => '장소 등록에 실패했습니다.',
+    };
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   Future<void> _syncMarkers(HomeProvider provider) async {
@@ -275,6 +361,14 @@ class _MarkerIcon extends StatelessWidget {
         return Icons.palette_outlined;
       case PlaceCategory.nightView:
         return Icons.nightlight_round;
+      case PlaceCategory.entertainment:
+        return Icons.sports_esports;
+      case PlaceCategory.bar:
+        return Icons.local_bar;
+      case PlaceCategory.shopping:
+        return Icons.storefront;
+      case PlaceCategory.attraction:
+        return Icons.landscape;
       case PlaceCategory.all:
         return Icons.place_outlined;
     }
