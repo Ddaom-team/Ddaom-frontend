@@ -1,9 +1,5 @@
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/api_client.dart';
@@ -21,8 +17,6 @@ class _PhotoSpotCreateScreenState extends State<PhotoSpotCreateScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
-  final _picker = ImagePicker();
-  XFile? _image;
   bool _loading = false;
 
   @override
@@ -32,36 +26,20 @@ class _PhotoSpotCreateScreenState extends State<PhotoSpotCreateScreen> {
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
-    final picked =
-        await _picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
-    if (picked != null) setState(() => _image = picked);
-  }
-
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_image == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('대표 사진을 선택해주세요.')),
-      );
-      return;
-    }
     setState(() => _loading = true);
     try {
       final api = context.read<ApiClient>();
-      final formData = FormData.fromMap({
-        'image': await MultipartFile.fromFile(_image!.path,
-            filename: 'photospot.jpg'),
-        'request': MultipartFile.fromString(
-          jsonEncode({
-            'title': _titleCtrl.text.trim(),
-            'description': _descCtrl.text.trim(),
-          }),
-          contentType: DioMediaType('application', 'json'),
-        ),
-      });
-      await api.dio
-          .post('/api/places/${widget.placeId}/photospots', data: formData);
+      // 백엔드는 imageUrl(문자열)만 받음. 사진 파일 업로드 API가 준비되면
+      // imageUrl을 채워 함께 전송한다. 현재는 이름·설명만 등록.
+      await api.dio.post(
+        '/api/places/${widget.placeId}/photo-spots',
+        data: {
+          'title': _titleCtrl.text.trim(),
+          'description': _descCtrl.text.trim(),
+        },
+      );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('포토존이 등록되었습니다.')),
@@ -103,32 +81,23 @@ class _PhotoSpotCreateScreenState extends State<PhotoSpotCreateScreen> {
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            GestureDetector(
-              onTap: _pickImage,
-              child: Container(
-                height: 200,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF5F5F5),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: _image == null
-                    ? const Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.add_a_photo_outlined,
-                                size: 36, color: Colors.grey),
-                            SizedBox(height: 8),
-                            Text('대표 사진 선택',
-                                style: TextStyle(color: Colors.grey)),
-                          ],
-                        ),
-                      )
-                    : ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: Image.file(File(_image!.path),
-                            width: double.infinity, fit: BoxFit.cover),
-                      ),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F5F5),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.grey),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      '사진 첨부는 준비 중입니다. 지금은 이름과 설명만 등록됩니다.',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 16),
