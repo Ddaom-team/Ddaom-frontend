@@ -119,8 +119,7 @@ class _UserSearchSheetState extends State<UserSearchSheet> {
               child: CircularProgressIndicator(color: AppColors.primaryPink),
             )
           else
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 320),
+            Flexible(
               child: _results.isEmpty && _ctrl.text.isNotEmpty
                   ? const Padding(
                       padding: EdgeInsets.all(20),

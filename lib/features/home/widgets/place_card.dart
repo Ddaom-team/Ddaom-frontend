@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/app_theme.dart';
+import '../../../core/network_thumb.dart';
 import '../home_models.dart';
 
 class PlaceCard extends StatelessWidget {
@@ -20,16 +21,10 @@ class PlaceCard extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Image.network(
-                place.thumbnailUrl ?? 'https://picsum.photos/seed/${place.id}/300/200',
+              child: NetworkThumb(
+                url: place.thumbnailUrl,
                 width: 140,
                 height: 100,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  width: 140,
-                  height: 100,
-                  color: AppColors.illustrationBox,
-                ),
               ),
             ),
             const SizedBox(height: 6),

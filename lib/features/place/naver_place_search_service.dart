@@ -1,7 +1,5 @@
 import 'package:dio/dio.dart';
 
-import '../../core/naver_map_config.dart';
-
 /// 네이버 지역 검색 결과 한 건.
 class NaverPlace {
   final String name;
@@ -101,22 +99,47 @@ class NaverPlaceSearchService {
   final Dio _dio;
   NaverPlaceSearchService([Dio? dio]) : _dio = dio ?? Dio();
 
+  // 지역검색·이미지검색 공통 자격 증명(네이버 개발자센터 "검색" 앱).
+  static const _headers = {
+    'X-Naver-Client-Id': 'xltb5iBTYFP_v6DvTCn5',
+    'X-Naver-Client-Secret': 'uQrcUx0VnA',
+  };
+
   Future<List<NaverPlace>> search(String query) async {
     final res = await _dio.get(
       'https://openapi.naver.com/v1/search/local.json',
       queryParameters: {'query': query, 'display': 5},
-      options: Options(
-        headers: {
-          'X-Naver-Client-Id': 'xltb5iBTYFP_v6DvTCn5',
-          'X-Naver-Client-Secret': 'uQrcUx0VnA',
-        },
-        validateStatus: (_) => true,
-      ),
+      options: Options(headers: _headers, validateStatus: (_) => true),
     );
     if (res.statusCode != 200) return [];
     final items = res.data['items'] as List<dynamic>? ?? [];
     return items
         .map((e) => NaverPlace.fromJson(e as Map<String, dynamic>))
         .toList();
+  }
+
+  /// 장소 대표 이미지로 쓸 이미지 URL을 네이버 이미지 검색으로 가져온다.
+  /// 네이버 지도엔 공식 장소사진 API가 없어 이미지 검색(웹 이미지)을 사용한다.
+  /// 안정적으로 로드되는 네이버 CDN 썸네일을 우선 반환하고, 없으면 원본 link.
+  /// 결과가 없거나 실패하면 null.
+  Future<String?> searchImage(String query) async {
+    try {
+      final res = await _dio.get(
+        'https://openapi.naver.com/v1/search/image.json',
+        queryParameters: {'query': query, 'display': 1, 'sort': 'sim'},
+        options: Options(headers: _headers, validateStatus: (_) => true),
+      );
+      if (res.statusCode != 200) return null;
+      final items = res.data['items'] as List<dynamic>? ?? [];
+      if (items.isEmpty) return null;
+      final first = items.first as Map<String, dynamic>;
+      final thumb = first['thumbnail'] as String?;
+      final link = first['link'] as String?;
+      if (thumb != null && thumb.isNotEmpty) return thumb;
+      if (link != null && link.isNotEmpty) return link;
+      return null;
+    } catch (_) {
+      return null;
+    }
   }
 }

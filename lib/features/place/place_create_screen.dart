@@ -304,8 +304,7 @@ class _AddressSearchSheetState extends State<_AddressSearchSheet> {
                   color: AppColors.primaryPink),
             )
           else
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 300),
+            Flexible(
               child: _ctrl.text.isNotEmpty && _results.isEmpty
                   ? const Padding(
                       padding: EdgeInsets.all(20),

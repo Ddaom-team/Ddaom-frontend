@@ -17,6 +17,7 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
   int _myPageRefreshKey = 0;
+  int _savedRefreshKey = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +25,7 @@ class _MainShellState extends State<MainShell> {
       const HomeScreen(),
       const CommunityScreen(),
       CameraScreen(onBack: () => setState(() => _currentIndex = 0)),
-      const SavedPlacesScreen(),
+      SavedPlacesScreen(key: ValueKey(_savedRefreshKey)),
       MyPageScreen(key: ValueKey(_myPageRefreshKey)),
     ];
 
@@ -41,6 +42,8 @@ class _MainShellState extends State<MainShell> {
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
           onTap: (i) => setState(() {
+            // 저장·마이 탭은 진입할 때마다 최신 데이터로 다시 로드.
+            if (i == 3) _savedRefreshKey++;
             if (i == 4) _myPageRefreshKey++;
             _currentIndex = i;
           }),

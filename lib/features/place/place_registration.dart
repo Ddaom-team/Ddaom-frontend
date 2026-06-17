@@ -47,6 +47,13 @@ Future<RegisterOutcome> registerNaverPlace({
       null) {
     return RegisterOutcome.duplicate;
   }
+  // 장소 대표 이미지를 네이버 이미지 검색으로 채운다(없으면 생략).
+  String? thumbnailUrl;
+  try {
+    thumbnailUrl = await NaverPlaceSearchService().searchImage(place.name);
+  } catch (_) {
+    thumbnailUrl = null;
+  }
   try {
     await api.dio.post('/api/places', data: {
       'name': place.name,
@@ -54,6 +61,8 @@ Future<RegisterOutcome> registerNaverPlace({
       'category': category.label,
       'latitude': place.lat,
       'longitude': place.lng,
+      if (thumbnailUrl != null && thumbnailUrl.isNotEmpty)
+        'thumbnailUrl': thumbnailUrl,
     });
     await home.loadPlaces();
     return RegisterOutcome.success;

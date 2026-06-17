@@ -4,7 +4,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:gal/gal.dart';
 
-import 'photo_metadata_screen.dart';
+import 'photo_selection_screen.dart';
 import '../place/place_models.dart';
 
 class DdaogiCameraScreen extends StatefulWidget {
@@ -38,10 +38,41 @@ class _DdaogiCameraScreenState extends State<DdaogiCameraScreen> {
 
   XFile? _lastPhoto;
 
+  // 카메라를 나갈 때 한꺼번에 등록하기 위해 촬영분을 누적한다.
+  final List<XFile> _captured = [];
+
   @override
   void initState() {
     super.initState();
     _initCamera();
+  }
+
+  // 찍은 사진이 있으면 선택 화면으로, 없으면 그냥 카메라를 닫는다.
+  Future<void> _onExit() async {
+    if (_captured.isEmpty) {
+      Navigator.maybePop(context);
+      return;
+    }
+    await _openSelection();
+  }
+
+  Future<void> _openSelection() async {
+    final uploaded = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PhotoSelectionScreen(
+          filePaths: _captured.map((e) => e.path).toList(),
+          photoZone: widget.photoZone,
+        ),
+      ),
+    );
+    // 업로드까지 끝났으면 누적을 비워 같은 사진이 다시 등록되지 않게 한다.
+    if (uploaded == true && mounted) {
+      setState(() {
+        _captured.clear();
+        _lastPhoto = null;
+      });
+    }
   }
 
   Future<void> _initCamera() async {
@@ -188,21 +219,12 @@ class _DdaogiCameraScreenState extends State<DdaogiCameraScreen> {
 
       setState(() {
         _lastPhoto = photo;
+        _captured.add(photo);
         _isSaving = true;
       });
 
       await Gal.putImage(photo.path, album: '따옴');
-
-      if (!mounted) return;
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => PhotoMetadataScreen(
-            filePath: photo.path,
-            photoSpotId: widget.photoZone?.id,
-          ),
-        ),
-      );
+      // 화면을 벗어나지 않고 계속 촬영. 등록은 카메라를 나갈 때 일괄 진행한다.
     } on GalException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -260,7 +282,7 @@ class _DdaogiCameraScreenState extends State<DdaogiCameraScreen> {
         children: [
           _circleIconButton(
             icon: Icons.arrow_back_ios_new,
-            onTap: () => Navigator.maybePop(context),
+            onTap: _onExit,
           ),
           const Spacer(),
           const Text(
@@ -431,21 +453,51 @@ class _DdaogiCameraScreenState extends State<DdaogiCameraScreen> {
   }
 
   Widget _albumPreview() {
-    return Container(
-      width: 58,
-      height: 58,
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white70, width: 1.5),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: _lastPhoto == null
-          ? const Icon(Icons.photo_library_outlined, color: Colors.white)
-          : Image.file(
-              File(_lastPhoto!.path),
-              fit: BoxFit.cover,
+    return GestureDetector(
+      onTap: _captured.isEmpty ? null : _openSelection,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: 58,
+            height: 58,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.white70, width: 1.5),
             ),
+            clipBehavior: Clip.antiAlias,
+            child: _lastPhoto == null
+                ? const Icon(Icons.photo_library_outlined, color: Colors.white)
+                : Image.file(
+                    File(_lastPhoto!.path),
+                    fit: BoxFit.cover,
+                  ),
+          ),
+          if (_captured.isNotEmpty)
+            Positioned(
+              top: -6,
+              right: -6,
+              child: Container(
+                padding: const EdgeInsets.all(5),
+                constraints: const BoxConstraints(minWidth: 22, minHeight: 22),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFF5C8A),
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  '${_captured.length}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 

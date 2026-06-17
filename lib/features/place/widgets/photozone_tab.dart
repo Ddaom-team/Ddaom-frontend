@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/app_theme.dart';
+import '../../home/home_provider.dart';
 import '../place_models.dart';
 import '../place_provider.dart';
 import 'photozone_card.dart';
 import '../photospot_create_screen.dart';
+import '../../photo/photospot_photos_screen.dart';
 
 class PhotozoneTab extends StatelessWidget {
   const PhotozoneTab({super.key});
@@ -25,6 +27,7 @@ class PhotozoneTab extends StatelessWidget {
             child: OutlinedButton.icon(
               onPressed: () async {
                 final p = context.read<PlaceProvider>();
+                final home = context.read<HomeProvider>();
                 final created = await Navigator.push<bool>(
                   context,
                   MaterialPageRoute(
@@ -32,7 +35,11 @@ class PhotozoneTab extends StatelessWidget {
                         PhotoSpotCreateScreen(placeId: p.placeId),
                   ),
                 );
-                if (created == true) p.reload();
+                if (created == true) {
+                  p.reload();
+                  // 홈 목록·포토존 피커가 보는 photoSpotCount도 갱신(stale 방지).
+                  home.loadPlaces();
+                }
               },
               icon: const Icon(Icons.add_a_photo_outlined, size: 18),
               label: const Text('포토존 등록'),
@@ -69,7 +76,26 @@ class PhotozoneTab extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             itemCount: provider.filteredZones.length,
             separatorBuilder: (_, i) => const Divider(height: 24),
-            itemBuilder: (context, i) => PhotozoneCard(zone: provider.filteredZones[i]),
+            itemBuilder: (context, i) {
+              final zone = provider.filteredZones[i];
+              return InkWell(
+                onTap: () {
+                  final spotId = int.tryParse(zone.id);
+                  if (spotId == null) return;
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => PhotospotPhotosScreen(
+                        photoSpotId: spotId,
+                        photoZoneName: zone.name,
+                        placeName: provider.detail?.name,
+                      ),
+                    ),
+                  );
+                },
+                child: PhotozoneCard(zone: zone),
+              );
+            },
           ),
         ),
       ],

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/api_client.dart';
 import '../../core/app_theme.dart';
+import '../../core/network_thumb.dart';
 import '../home/home_models.dart';
 import '../place/place_detail_screen.dart';
 import 'saved_places_provider.dart';
@@ -110,18 +111,11 @@ class _PlaceListItem extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
-              child: Image.network(
-                place.thumbnailUrl ?? 'https://picsum.photos/seed/${place.id}/200/200',
+              child: NetworkThumb(
+                url: place.thumbnailUrl,
                 width: 80,
                 height: 80,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  width: 80,
-                  height: 80,
-                  color: AppColors.illustrationBox,
-                  child: const Icon(Icons.image_not_supported_outlined,
-                      color: AppColors.textMuted),
-                ),
+                placeholderIcon: Icons.image_not_supported_outlined,
               ),
             ),
             const SizedBox(width: 14),

@@ -85,6 +85,7 @@ class _PlaceSearchScreenState extends State<PlaceSearchScreen> {
     );
     showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),

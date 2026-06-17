@@ -68,11 +68,13 @@ class _NaverPlaceInfoCardState extends State<NaverPlaceInfoCard> {
   Widget build(BuildContext context) {
     final place = widget.place;
     return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           Text(place.name,
               style:
                   const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -139,7 +141,8 @@ class _NaverPlaceInfoCardState extends State<NaverPlaceInfoCard> {
             child: const Text('이 장소 등록',
                 style: TextStyle(color: Colors.white, fontSize: 16)),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }

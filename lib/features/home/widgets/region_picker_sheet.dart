@@ -59,8 +59,7 @@ class _RegionPickerSheetState extends State<RegionPickerSheet> {
               ),
             ),
             const SizedBox(height: 8),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 300),
+            Flexible(
               child: ListView.builder(
                 shrinkWrap: true,
                 itemCount: _filtered.length,

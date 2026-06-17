@@ -9,12 +9,12 @@ import 'photo_models.dart';
 import 'photo_service.dart';
 
 class PhotoMetadataScreen extends StatefulWidget {
-  final String filePath;
+  final List<String> filePaths;
   final String? photoSpotId;
 
   const PhotoMetadataScreen({
     super.key,
-    required this.filePath,
+    required this.filePaths,
     this.photoSpotId,
   });
 
@@ -32,6 +32,7 @@ class _PhotoMetadataScreenState extends State<PhotoMetadataScreen> {
   PhotoVisibility _visibility = PhotoVisibility.PUBLIC;
 
   bool _isUploading = false;
+  int _uploadedCount = 0;
 
   @override
   void dispose() {
@@ -40,35 +41,52 @@ class _PhotoMetadataScreenState extends State<PhotoMetadataScreen> {
   }
 
   Future<void> _upload() async {
-    setState(() => _isUploading = true);
+    setState(() {
+      _isUploading = true;
+      _uploadedCount = 0;
+    });
+    final service = PhotoService(context.read<ApiClient>());
+    final request = PhotoUploadRequest(
+      photoSpotId: widget.photoSpotId,
+      tip: _tipController.text.trim().isEmpty ? null : _tipController.text.trim(),
+      mood: _mood,
+      timeTag: _timeTag,
+      photoType: _photoType,
+      crowdLevel: _crowdLevel,
+      photoVisibility: _visibility,
+    );
     try {
-      final request = PhotoUploadRequest(
-        photoSpotId: widget.photoSpotId,
-        tip: _tipController.text.trim().isEmpty ? null : _tipController.text.trim(),
-        mood: _mood,
-        timeTag: _timeTag,
-        photoType: _photoType,
-        crowdLevel: _crowdLevel,
-        photoVisibility: _visibility,
-      );
-      await PhotoService(context.read<ApiClient>()).uploadPhoto(
-        filePath: widget.filePath,
-        request: request,
-      );
+      // 선택한 사진을 같은 포토존·메타데이터로 한 장씩 순차 업로드.
+      for (final path in widget.filePaths) {
+        await service.uploadPhoto(filePath: path, request: request);
+        if (!mounted) return;
+        setState(() => _uploadedCount++);
+      }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('사진이 업로드됐어요!')),
+        SnackBar(content: Text('사진 ${widget.filePaths.length}장이 업로드됐어요!')),
       );
-      Navigator.pop(context);
+      // 업로드 완료를 호출 체인(선택→포토존→카메라)에 전파해 누적 사진을 비우게 한다.
+      Navigator.pop(context, true);
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('업로드 실패: ${e.message}')),
+        SnackBar(
+          content: Text(
+            '업로드 실패: ${e.message}'
+            '${_uploadedCount > 0 ? ' ($_uploadedCount장 업로드됨)' : ''}',
+          ),
+        ),
       );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('업로드에 실패했습니다')),
+        SnackBar(
+          content: Text(
+            '업로드에 실패했습니다'
+            '${_uploadedCount > 0 ? ' ($_uploadedCount장 업로드됨)' : ''}',
+          ),
+        ),
       );
     } finally {
       if (mounted) setState(() => _isUploading = false);
@@ -159,9 +177,43 @@ class _PhotoMetadataScreenState extends State<PhotoMetadataScreen> {
       borderRadius: BorderRadius.circular(16),
       child: AspectRatio(
         aspectRatio: 4 / 3,
-        child: Image.file(
-          File(widget.filePath),
-          fit: BoxFit.cover,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.file(
+              File(widget.filePaths.first),
+              fit: BoxFit.cover,
+            ),
+            if (widget.filePaths.length > 1)
+              Positioned(
+                top: 10,
+                right: 10,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.collections,
+                          color: Colors.white, size: 15),
+                      const SizedBox(width: 5),
+                      Text(
+                        '${widget.filePaths.length}장',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -280,17 +332,35 @@ class _PhotoMetadataScreenState extends State<PhotoMetadataScreen> {
               ),
             ),
             child: _isUploading
-                ? const SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2.5,
-                    ),
+                ? Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2.5,
+                        ),
+                      ),
+                      if (widget.filePaths.length > 1) ...[
+                        const SizedBox(width: 12),
+                        Text(
+                          '$_uploadedCount/${widget.filePaths.length}',
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ],
                   )
-                : const Text(
-                    '업로드',
-                    style: TextStyle(
+                : Text(
+                    widget.filePaths.length > 1
+                        ? '${widget.filePaths.length}장 업로드'
+                        : '업로드',
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,

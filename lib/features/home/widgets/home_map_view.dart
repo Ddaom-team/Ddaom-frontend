@@ -132,6 +132,7 @@ class _HomeMapViewState extends State<HomeMapView> {
     if (!mounted) return;
     showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),

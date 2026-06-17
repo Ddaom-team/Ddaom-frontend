@@ -31,6 +31,15 @@ class PhotoService {
         .toList();
   }
 
+  Future<List<PhotoInfo>> getPhotosByPhotoSpot(int photoSpotId) async {
+    final res = await _api.dio
+        .get('/api/photos', queryParameters: {'photoSpotId': photoSpotId});
+    final items = res.data as List<dynamic>;
+    return items
+        .map((json) => PhotoInfo.fromJson(json as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<List<PhotoInfo>> getLikedPhotos() async {
     final res = await _api.dio.get('/api/photos/likes/me');
     final items = res.data as List<dynamic>;

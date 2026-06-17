@@ -17,7 +17,7 @@ extension PhotoZoneTagLabel on PhotoZoneTag {
 class PhotoZone {
   final String id;
   final String name;
-  final String imageUrl;
+  final String? imageUrl;
   final int likeCount;
   final int saveCount;
   final List<PhotoZoneTag> tags;
@@ -25,7 +25,7 @@ class PhotoZone {
   const PhotoZone({
     required this.id,
     required this.name,
-    required this.imageUrl,
+    this.imageUrl,
     required this.likeCount,
     required this.saveCount,
     required this.tags,
@@ -34,7 +34,7 @@ class PhotoZone {
   factory PhotoZone.fromJson(Map<String, dynamic> json) => PhotoZone(
     id: json['photoSpotId'].toString(),
     name: json['title'] as String? ?? '',
-    imageUrl: json['imageUrl'] as String? ?? 'https://picsum.photos/seed/${json['photoSpotId']}/300/300',
+    imageUrl: json['imageUrl'] as String?,
     likeCount: 0,
     saveCount: 0,
     tags: [],
@@ -66,7 +66,7 @@ class Review {
 class PlaceDetail {
   final String id;
   final String name;
-  final String heroImageUrl;
+  final String? heroImageUrl;
   final double rating;
   final int reviewCount;
   final List<PhotoZone> photoZones;
@@ -88,9 +88,11 @@ class PlaceDetail {
     final spots = (json['photoSpots'] as List<dynamic>? ?? [])
         .map((e) => PhotoZone.fromJson(e as Map<String, dynamic>))
         .toList();
-    final heroUrl = spots.isNotEmpty
-        ? spots.first.imageUrl
-        : 'https://picsum.photos/seed/default/600/400';
+    // 대표 이미지: 백엔드가 저장한 thumbnailUrl 우선, 없으면 첫 포토스팟 사진.
+    final thumb = json['thumbnailUrl'] as String?;
+    final heroUrl = (thumb != null && thumb.isNotEmpty)
+        ? thumb
+        : (spots.isNotEmpty ? spots.first.imageUrl : null);
     return PlaceDetail(
       id: json['placeId'].toString(),
       name: json['name'] as String,
