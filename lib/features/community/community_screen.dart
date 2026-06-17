@@ -606,12 +606,18 @@ class _PopularFeedState extends State<_PopularFeed>
     final imageUrl = (url.startsWith('http://') || url.startsWith('https://'))
         ? url
         : '${ApiClient.baseUrl}$url';
+    final avatarUrl = p.profileImage ?? '';
+    final resolvedAvatar = avatarUrl.isNotEmpty &&
+            !avatarUrl.startsWith('http://') &&
+            !avatarUrl.startsWith('https://')
+        ? '${ApiClient.baseUrl}$avatarUrl'
+        : avatarUrl;
     return _CommunityPost(
       photoId: p.photoId,
       id: 'top_${p.photoId}',
       imageUrl: imageUrl,
-      authorName: '',
-      authorAvatarUrl: '',
+      authorName: p.nickname ?? '',
+      authorAvatarUrl: resolvedAvatar,
       followerCount: 0,
       location: '',
       hashtags: [p.mood.label, p.timeTag.label],
@@ -619,7 +625,7 @@ class _PopularFeedState extends State<_PopularFeed>
       timeTag: p.timeTag,
       photoType: p.photoType,
       crowdLevel: p.crowdLevel,
-      likeCount: 0,
+      likeCount: p.likeCount,
       liked: p.liked,
     );
   }

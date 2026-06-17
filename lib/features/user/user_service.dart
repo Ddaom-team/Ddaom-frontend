@@ -2,10 +2,16 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../core/api_client.dart';
+import '../mypage/mypage_models.dart';
 
 class UserService {
   final ApiClient _api;
   UserService(this._api);
+
+  Future<UserProfile> getUserProfile(int userId) async {
+    final res = await _api.dio.get('/api/users/$userId');
+    return UserProfile.fromJson(res.data as Map<String, dynamic>);
+  }
 
   // 실제 사용: SecureStorage에서 JWT를 인터셉터가 자동 주입
   Future<Map<String, dynamic>> getMe() async {

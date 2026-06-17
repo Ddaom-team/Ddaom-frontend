@@ -109,7 +109,9 @@ class _PhotoGridTileState extends State<PhotoGridTile> {
                       children: [
                         CircleAvatar(
                           radius: 7,
-                          backgroundImage: NetworkImage(widget.photo.authorAvatarUrl),
+                          backgroundImage: widget.photo.authorAvatarUrl.isNotEmpty
+                              ? NetworkImage(widget.photo.authorAvatarUrl)
+                              : null,
                           backgroundColor: AppColors.illustrationBox,
                         ),
                         const SizedBox(width: 3),

@@ -5,6 +5,10 @@ import '../../core/api_client.dart';
 import '../../core/app_theme.dart';
 import '../../features/photo/photo_models.dart';
 import '../../features/photo/photo_service.dart';
+import '../mypage/mypage_models.dart';
+import '../mypage/mypage_provider.dart';
+import '../user/follow_service.dart';
+import '../user/user_service.dart';
 
 class CommunityPostDetailScreen extends StatefulWidget {
   final int photoId;
@@ -30,12 +34,22 @@ class CommunityPostDetailScreen extends StatefulWidget {
 
 class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
   PhotoInfo? _photo;
+  UserProfile? _author;
   bool _loading = true;
   String? _error;
+
+  late bool _liked;
+  late int _likeCount;
+  bool _likePending = false;
+
+  bool? _following;
+  bool _followBusy = false;
 
   @override
   void initState() {
     super.initState();
+    _liked = false;
+    _likeCount = 0;
     _load();
   }
 
@@ -47,12 +61,86 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     try {
       final photo = await context.read<PhotoService>().getPhoto(widget.photoId);
       if (!mounted) return;
-      setState(() => _photo = photo);
+      setState(() {
+        _photo = photo;
+        _liked = photo.liked;
+        _likeCount = photo.likeCount;
+      });
+      _loadAuthor(photo.userId);
     } catch (e) {
       if (!mounted) return;
       setState(() => _error = e.toString());
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _loadAuthor(int userId) async {
+    final api = context.read<ApiClient>();
+    final followService = FollowService(api);
+    try {
+      final results = await Future.wait([
+        UserService(api).getUserProfile(userId),
+        followService.isFollowing(userId),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _author = results[0] as UserProfile;
+        _following = results[1] as bool;
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _toggleFollow() async {
+    if (_followBusy || _author == null) return;
+    final wasFollowing = _following ?? false;
+    setState(() {
+      _followBusy = true;
+      _following = !wasFollowing;
+    });
+    try {
+      final followService = FollowService(context.read<ApiClient>());
+      if (wasFollowing) {
+        await followService.unfollow(_author!.userId);
+      } else {
+        await followService.follow(_author!.userId);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _following = wasFollowing);
+    } finally {
+      if (mounted) setState(() => _followBusy = false);
+    }
+  }
+
+  Future<void> _toggleLike() async {
+    if (_likePending) return;
+    final wasLiked = _liked;
+    final prevCount = _likeCount;
+    setState(() {
+      _likePending = true;
+      _liked = !wasLiked;
+      _likeCount += _liked ? 1 : -1;
+    });
+    try {
+      final service = context.read<PhotoService>();
+      final result = wasLiked
+          ? await service.unlikePhoto(widget.photoId)
+          : await service.likePhoto(widget.photoId);
+      if (mounted) {
+        setState(() {
+          _liked = result.liked;
+          _likeCount = result.likeCount;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _liked = wasLiked;
+          _likeCount = prevCount;
+        });
+      }
+    } finally {
+      if (mounted) setState(() => _likePending = false);
     }
   }
 
@@ -109,10 +197,10 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildImage(photo.photoUrl),
-                if (widget.authorName != null) ...[
-                  _buildUserSection(),
-                  _buildDivider(),
-                ],
+                _buildLikeBar(),
+                _buildDivider(),
+                _buildUserSection(),
+                _buildDivider(),
                 if (widget.location != null) ...[
                   _buildLocationSection(),
                   _buildDivider(),
@@ -144,50 +232,138 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     );
   }
 
+  Widget _buildLikeBar() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: _toggleLike,
+            child: Opacity(
+              opacity: _likePending ? 0.6 : 1.0,
+              child: Row(
+                children: [
+                  Icon(
+                    _liked ? Icons.favorite : Icons.favorite_border,
+                    color: _liked ? const Color(0xFFFF6B9D) : AppColors.textMuted,
+                    size: 26,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '$_likeCount',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textMain,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildUserSection() {
+    final avatarUrl = _author?.avatarUrl;
+    final name = _author?.name ?? widget.authorName;
+    final followerCount = _author?.followerCount ?? widget.followerCount;
+    final myUserId = context.read<MyPageProvider>().profile?.userId;
+    final isMe = _author != null && myUserId == _author!.userId;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Row(
         children: [
           CircleAvatar(
             radius: 22,
-            backgroundImage: NetworkImage(widget.authorAvatarUrl!),
+            backgroundImage: (avatarUrl?.isNotEmpty ?? false)
+                ? NetworkImage(_resolveImageUrl(avatarUrl!))
+                : null,
             backgroundColor: AppColors.illustrationBox,
           ),
           const SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                widget.authorName!,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textMain,
-                ),
-              ),
-              if (widget.followerCount != null) ...[
-                const SizedBox(height: 2),
+              if (name != null)
                 Text(
-                  '팔로워 ${_formatCount(widget.followerCount!)}명',
-                  style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                  name,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textMain,
+                  ),
+                )
+              else
+                Container(
+                  width: 80,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: AppColors.illustrationBox,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
                 ),
-              ],
+              const SizedBox(height: 2),
+              if (followerCount != null)
+                Text(
+                  '팔로워 ${_formatCount(followerCount)}명',
+                  style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                )
+              else
+                Container(
+                  width: 60,
+                  height: 11,
+                  margin: const EdgeInsets.only(top: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.illustrationBox,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
             ],
           ),
           const Spacer(),
-          OutlinedButton(
-            onPressed: () {},
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.primaryPink,
-              side: const BorderSide(color: AppColors.primaryPink),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            child: const Text('팔로우', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-          ),
+          if (!isMe)
+            _following == null
+                ? const SizedBox(
+                    width: 72,
+                    height: 32,
+                    child: Center(
+                      child: SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.primaryPink,
+                        ),
+                      ),
+                    ),
+                  )
+                : FilledButton(
+                    onPressed: _followBusy ? null : _toggleFollow,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: _following!
+                          ? AppColors.illustrationBox
+                          : AppColors.primaryPink,
+                      foregroundColor: _following!
+                          ? AppColors.textMain
+                          : Colors.white,
+                      disabledBackgroundColor: AppColors.illustrationBox,
+                      disabledForegroundColor: AppColors.textMuted,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20)),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: Text(
+                      _following! ? '팔로잉' : '팔로우',
+                      style: const TextStyle(
+                          fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                  ),
         ],
       ),
     );
