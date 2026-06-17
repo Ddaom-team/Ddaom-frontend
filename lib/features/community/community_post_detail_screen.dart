@@ -7,6 +7,7 @@ import '../../features/photo/photo_models.dart';
 import '../../features/photo/photo_service.dart';
 import '../mypage/mypage_models.dart';
 import '../mypage/mypage_provider.dart';
+import '../photo/ddaogi_camera_screen.dart';
 import '../user/follow_service.dart';
 import '../user/user_service.dart';
 
@@ -489,7 +490,18 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
           width: double.infinity,
           height: 52,
           child: ElevatedButton(
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => DdaogiCameraScreen(
+                    referencePhotoUrl: _photo != null
+                        ? _resolveImageUrl(_photo!.photoUrl)
+                        : null,
+                  ),
+                ),
+              );
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryPink,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
