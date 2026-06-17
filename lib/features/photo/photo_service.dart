@@ -23,6 +23,40 @@ class PhotoService {
         .toList();
   }
 
+  Future<List<PhotoInfo>> getUserPhotos(int userId) async {
+    final res = await _api.dio.get('/api/photos/users/$userId');
+    final items = res.data as List<dynamic>;
+    return items
+        .map((json) => PhotoInfo.fromJson(json as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<List<PhotoInfo>> getLikedPhotos() async {
+    final res = await _api.dio.get('/api/photos/likes/me');
+    final items = res.data as List<dynamic>;
+    return items
+        .map((json) => PhotoInfo.fromJson(json as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<List<PhotoInfo>> getTopPhotos() async {
+    final res = await _api.dio.get('/api/photos/likes/top');
+    final items = res.data as List<dynamic>;
+    return items
+        .map((json) => PhotoInfo.fromJson(json as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<PhotoLikeResult> likePhoto(int photoId) async {
+    final res = await _api.dio.post('/api/photos/$photoId/likes');
+    return PhotoLikeResult.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<PhotoLikeResult> unlikePhoto(int photoId) async {
+    final res = await _api.dio.delete('/api/photos/$photoId/likes');
+    return PhotoLikeResult.fromJson(res.data as Map<String, dynamic>);
+  }
+
   Future<void> uploadPhoto({
     required String filePath,
     required PhotoUploadRequest request,

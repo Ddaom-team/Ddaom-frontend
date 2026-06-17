@@ -6,9 +6,11 @@ import 'package:provider/provider.dart';
 import '../../core/api_client.dart';
 import '../../core/app_theme.dart';
 import '../../features/photo/photo_models.dart';
+import '../../features/photo/photo_service.dart';
 import 'community_models.dart';
 import 'community_post_detail_screen.dart';
 import 'community_service.dart';
+import 'friend_profile_screen.dart';
 
 class _CommunityPost {
   final int photoId;
@@ -44,41 +46,6 @@ class _CommunityPost {
   });
 }
 
-List<_CommunityPost> _popularMock() {
-  final names = ['인기작가1', '스냅유저', '트렌드세터', '베스트컷', '핫픽커'];
-  final locations = ['남산타워', '광화문', '동대문DDP', '서울숲', '인사동', '창덕궁'];
-  final tagSets = [
-    ['남산', '서울야경'],
-    ['광화문', '야간'],
-    ['DDP', '건축'],
-    ['서울숲', '벚꽃'],
-    ['인사동', '전통'],
-    ['창덕궁', '궁궐'],
-  ];
-  final moods = [PhotoMood.CINEMATIC, PhotoMood.MODERN, PhotoMood.NIGHT, PhotoMood.BRIGHT, PhotoMood.NOSTALGIC, PhotoMood.QUIET];
-  final times = [PhotoTimeTag.NIGHT, PhotoTimeTag.AFTERNOON, PhotoTimeTag.SUNSET, PhotoTimeTag.MORNING, PhotoTimeTag.AFTERNOON, PhotoTimeTag.SUNSET];
-  final types = [PhotoType.LANDSCAPE, PhotoType.FULL_BODY, PhotoType.LANDSCAPE, PhotoType.SELFIE, PhotoType.UPPER_BODY, PhotoType.LANDSCAPE];
-  final crowds = [CrowdLevel.CROWDED, CrowdLevel.NORMAL, CrowdLevel.HARD_TO_SHOOT, CrowdLevel.RELAXED, CrowdLevel.NORMAL, CrowdLevel.CROWDED];
-  final followers = [52000, 13400, 87000, 29000, 6700, 41000];
-
-  final likeCounts = [143, 89, 312, 57, 204, 76, 445, 33, 167, 520, 91, 238];
-
-  return List.generate(12, (i) => _CommunityPost(
-    photoId: i + 101,
-    id: 'p$i',
-    imageUrl: 'https://picsum.photos/seed/popular$i/400/400',
-    authorName: names[i % names.length],
-    authorAvatarUrl: 'https://picsum.photos/seed/pavatar$i/100/100',
-    followerCount: followers[i % followers.length],
-    location: locations[i % locations.length],
-    hashtags: tagSets[i % tagSets.length],
-    mood: moods[i % moods.length],
-    timeTag: times[i % times.length],
-    photoType: types[i % types.length],
-    crowdLevel: crowds[i % crowds.length],
-    likeCount: likeCounts[i % likeCounts.length],
-  ));
-}
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key});
@@ -149,6 +116,22 @@ class _CommunityScreenState extends State<CommunityScreen>
       if (!mounted || _query != query) return;
       setState(() => _searching = false);
     }
+  }
+
+  Future<void> _openFriendProfile(CommunityUser user) async {
+    if (user.me) return;
+    final newFollowing = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => FriendProfileScreen(user: user)),
+    );
+    if (!mounted || newFollowing == null) return;
+    setState(() {
+      _searchResults = _searchResults
+          .map((item) => item.userId == user.userId
+              ? item.copyWith(following: newFollowing)
+              : item)
+          .toList();
+    });
   }
 
   Future<void> _toggleFollow(CommunityUser user) async {
@@ -278,12 +261,13 @@ class _CommunityScreenState extends State<CommunityScreen>
               pendingFollowUserId: _pendingFollowUserId,
               onRetry: () => _searchUsers(_query),
               onToggleFollow: _toggleFollow,
+              onTapUser: _openFriendProfile,
             )
           : TabBarView(
               controller: _tabController,
-              children: [
-                const _FollowingFeed(),
-                _PostGrid(posts: _popularMock()),
+              children: const [
+                _FollowingFeed(),
+                _PopularFeed(),
               ],
             ),
     );
@@ -297,6 +281,7 @@ class _UserSearchResults extends StatelessWidget {
   final int? pendingFollowUserId;
   final VoidCallback onRetry;
   final ValueChanged<CommunityUser> onToggleFollow;
+  final ValueChanged<CommunityUser> onTapUser;
 
   const _UserSearchResults({
     required this.users,
@@ -305,6 +290,7 @@ class _UserSearchResults extends StatelessWidget {
     required this.pendingFollowUserId,
     required this.onRetry,
     required this.onToggleFollow,
+    required this.onTapUser,
   });
 
   @override
@@ -346,6 +332,7 @@ class _UserSearchResults extends StatelessWidget {
           user: user,
           busy: pendingFollowUserId == user.userId,
           onToggleFollow: () => onToggleFollow(user),
+          onTap: () => onTapUser(user),
         );
       },
     );
@@ -356,16 +343,19 @@ class _UserSearchTile extends StatelessWidget {
   final CommunityUser user;
   final bool busy;
   final VoidCallback onToggleFollow;
+  final VoidCallback? onTap;
 
   const _UserSearchTile({
     required this.user,
     required this.busy,
     required this.onToggleFollow,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
+      onTap: user.me ? null : onTap,
       minVerticalPadding: 12,
       leading: _UserAvatar(imageUrl: user.profileImage, name: user.nickname),
       title: Row(
@@ -493,10 +483,14 @@ class _FollowingFeed extends StatefulWidget {
   State<_FollowingFeed> createState() => _FollowingFeedState();
 }
 
-class _FollowingFeedState extends State<_FollowingFeed> {
+class _FollowingFeedState extends State<_FollowingFeed>
+    with AutomaticKeepAliveClientMixin {
   List<_CommunityPost> _posts = [];
   bool _loading = true;
   String? _error;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -534,7 +528,8 @@ class _FollowingFeedState extends State<_FollowingFeed> {
         timeTag: p.timeTag,
         photoType: p.photoType,
         crowdLevel: p.crowdLevel,
-        likeCount: 0,
+        likeCount: p.likeCount,
+        liked: p.liked,
       );
 
   String _resolveUrl(String url) {
@@ -545,6 +540,7 @@ class _FollowingFeedState extends State<_FollowingFeed> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     if (_loading) {
       return const Center(child: CircularProgressIndicator(color: AppColors.primaryPink));
     }
@@ -560,6 +556,92 @@ class _FollowingFeedState extends State<_FollowingFeed> {
       return const _SearchEmptyState(
         icon: Icons.photo_camera_outlined,
         title: '팔로우하는 사람들의 최근 사진이 없습니다.',
+      );
+    }
+    return _PostGrid(posts: _posts);
+  }
+}
+
+class _PopularFeed extends StatefulWidget {
+  const _PopularFeed();
+
+  @override
+  State<_PopularFeed> createState() => _PopularFeedState();
+}
+
+class _PopularFeedState extends State<_PopularFeed>
+    with AutomaticKeepAliveClientMixin {
+  List<_CommunityPost> _posts = [];
+  bool _loading = true;
+  String? _error;
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final photos = await context.read<PhotoService>().getTopPhotos();
+      if (!mounted) return;
+      setState(() => _posts = photos.map(_fromPhoto).toList());
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = e is ApiException ? e.message : '인기 사진을 불러오지 못했습니다.');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  _CommunityPost _fromPhoto(PhotoInfo p) {
+    final url = p.photoUrl;
+    final imageUrl = (url.startsWith('http://') || url.startsWith('https://'))
+        ? url
+        : '${ApiClient.baseUrl}$url';
+    return _CommunityPost(
+      photoId: p.photoId,
+      id: 'top_${p.photoId}',
+      imageUrl: imageUrl,
+      authorName: '',
+      authorAvatarUrl: '',
+      followerCount: 0,
+      location: '',
+      hashtags: [p.mood.label, p.timeTag.label],
+      mood: p.mood,
+      timeTag: p.timeTag,
+      photoType: p.photoType,
+      crowdLevel: p.crowdLevel,
+      likeCount: 0,
+      liked: p.liked,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator(color: AppColors.primaryPink));
+    }
+    if (_error != null) {
+      return _SearchEmptyState(
+        icon: Icons.error_outline,
+        title: _error!,
+        actionLabel: '다시 시도',
+        onAction: _load,
+      );
+    }
+    if (_posts.isEmpty) {
+      return const _SearchEmptyState(
+        icon: Icons.photo_camera_outlined,
+        title: '인기 사진이 없습니다.',
       );
     }
     return _PostGrid(posts: _posts);
@@ -645,6 +727,7 @@ class _PostTile extends StatefulWidget {
 class _PostTileState extends State<_PostTile> {
   late bool _liked;
   late int _likeCount;
+  bool _pending = false;
 
   @override
   void initState() {
@@ -653,11 +736,36 @@ class _PostTileState extends State<_PostTile> {
     _likeCount = widget.post.likeCount;
   }
 
-  void _toggleLike() {
+  Future<void> _toggleLike() async {
+    if (_pending) return;
+    final wasLiked = _liked;
+    final prevCount = _likeCount;
     setState(() {
-      _liked = !_liked;
+      _pending = true;
+      _liked = !wasLiked;
       _likeCount += _liked ? 1 : -1;
     });
+    try {
+      final service = context.read<PhotoService>();
+      final result = wasLiked
+          ? await service.unlikePhoto(widget.post.photoId)
+          : await service.likePhoto(widget.post.photoId);
+      if (mounted) {
+        setState(() {
+          _liked = result.liked;
+          _likeCount = result.likeCount;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _liked = wasLiked;
+          _likeCount = prevCount;
+        });
+      }
+    } finally {
+      if (mounted) setState(() => _pending = false);
+    }
   }
 
   void _openDetail(BuildContext context) {
@@ -738,30 +846,33 @@ class _PostTileState extends State<_PostTile> {
                   child: GestureDetector(
                     onTap: _toggleLike,
                     behavior: HitTestBehavior.opaque,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: Colors.black45,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            _liked ? Icons.favorite : Icons.favorite_border,
-                            color: _liked ? const Color(0xFFFF6B9D) : Colors.white,
-                            size: 11,
-                          ),
-                          const SizedBox(width: 2),
-                          Text(
-                            '$_likeCount',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w600,
+                    child: Opacity(
+                      opacity: _pending ? 0.6 : 1.0,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.black45,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _liked ? Icons.favorite : Icons.favorite_border,
+                              color: _liked ? const Color(0xFFFF6B9D) : Colors.white,
+                              size: 11,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 2),
+                            Text(
+                              '$_likeCount',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),

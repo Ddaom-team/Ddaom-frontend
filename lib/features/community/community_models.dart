@@ -14,6 +14,8 @@ class FollowingPhoto {
   final CrowdLevel crowdLevel;
   final PhotoVisibility photoVisibility;
   final String createdAt;
+  final bool liked;
+  final int likeCount;
 
   const FollowingPhoto({
     required this.photoId,
@@ -29,6 +31,8 @@ class FollowingPhoto {
     required this.crowdLevel,
     required this.photoVisibility,
     required this.createdAt,
+    this.liked = false,
+    this.likeCount = 0,
   });
 
   factory FollowingPhoto.fromJson(Map<String, dynamic> json) => FollowingPhoto(
@@ -60,6 +64,8 @@ class FollowingPhoto {
           orElse: () => PhotoVisibility.PUBLIC,
         ),
         createdAt: json['createdAt'] as String,
+        liked: json['liked'] as bool? ?? false,
+        likeCount: (json['likeCount'] as num?)?.toInt() ?? 0,
       );
 }
 

@@ -5,6 +5,7 @@ import '../../screens/camera_screen.dart';
 import '../community/community_screen.dart';
 import '../home/home_screen.dart';
 import '../mypage/mypage_screen.dart';
+import '../saved/saved_places_screen.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -23,7 +24,7 @@ class _MainShellState extends State<MainShell> {
       const HomeScreen(),
       const CommunityScreen(),
       CameraScreen(onBack: () => setState(() => _currentIndex = 0)),
-      const _PlaceholderScreen(label: '저장한 장소'),
+      const SavedPlacesScreen(),
       MyPageScreen(key: ValueKey(_myPageRefreshKey)),
     ];
 

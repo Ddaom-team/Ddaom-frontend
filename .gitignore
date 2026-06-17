@@ -46,6 +46,10 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+android/build/
+
+# Claude Code local settings
+.claude/settings.local.json
 
 # Naver Maps API Key
 lib/core/naver_map_config.dart

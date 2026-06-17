@@ -107,8 +107,8 @@ class NaverPlaceSearchService {
       queryParameters: {'query': query, 'display': 5},
       options: Options(
         headers: {
-          'X-Naver-Client-Id': naverSearchClientId,
-          'X-Naver-Client-Secret': naverSearchClientSecret,
+          'X-Naver-Client-Id': 'xltb5iBTYFP_v6DvTCn5',
+          'X-Naver-Client-Secret': 'uQrcUx0VnA',
         },
         validateStatus: (_) => true,
       ),

@@ -91,6 +91,8 @@ class PhotoInfo {
   final CrowdLevel crowdLevel;
   final PhotoVisibility photoVisibility;
   final String createdAt;
+  final bool liked;
+  final int likeCount;
 
   const PhotoInfo({
     required this.photoId,
@@ -104,6 +106,8 @@ class PhotoInfo {
     required this.crowdLevel,
     required this.photoVisibility,
     required this.createdAt,
+    this.liked = false,
+    this.likeCount = 0,
   });
 
   factory PhotoInfo.fromJson(Map<String, dynamic> json) => PhotoInfo(
@@ -133,6 +137,26 @@ class PhotoInfo {
           orElse: () => PhotoVisibility.PUBLIC,
         ),
         createdAt: json['createdAt'] as String,
+        liked: json['liked'] as bool? ?? false,
+        likeCount: (json['likeCount'] as num?)?.toInt() ?? 0,
+      );
+}
+
+class PhotoLikeResult {
+  final int photoId;
+  final bool liked;
+  final int likeCount;
+
+  const PhotoLikeResult({
+    required this.photoId,
+    required this.liked,
+    required this.likeCount,
+  });
+
+  factory PhotoLikeResult.fromJson(Map<String, dynamic> json) => PhotoLikeResult(
+        photoId: (json['photoId'] as num).toInt(),
+        liked: json['liked'] as bool,
+        likeCount: (json['likeCount'] as num).toInt(),
       );
 }
 

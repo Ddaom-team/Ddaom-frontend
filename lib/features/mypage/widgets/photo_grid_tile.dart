@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../core/app_theme.dart';
 import '../../community/community_post_detail_screen.dart';
+import '../../photo/photo_service.dart';
 import '../mypage_models.dart';
 
 class PhotoGridTile extends StatefulWidget {
@@ -17,6 +19,7 @@ class PhotoGridTile extends StatefulWidget {
 class _PhotoGridTileState extends State<PhotoGridTile> {
   late bool _liked;
   late int _likeCount;
+  bool _pending = false;
 
   @override
   void initState() {
@@ -25,18 +28,48 @@ class _PhotoGridTileState extends State<PhotoGridTile> {
     _likeCount = widget.photo.likeCount;
   }
 
-  void _toggleLike() {
+  Future<void> _toggleLike() async {
+    if (_pending) return;
+    final wasLiked = _liked;
+    final prevCount = _likeCount;
     setState(() {
-      _liked = !_liked;
+      _pending = true;
+      _liked = !wasLiked;
       _likeCount += _liked ? 1 : -1;
     });
+    try {
+      final service = context.read<PhotoService>();
+      final result = wasLiked
+          ? await service.unlikePhoto(widget.photo.photoId)
+          : await service.likePhoto(widget.photo.photoId);
+      if (mounted) {
+        setState(() {
+          _liked = result.liked;
+          _likeCount = result.likeCount;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _liked = wasLiked;
+          _likeCount = prevCount;
+        });
+      }
+    } finally {
+      if (mounted) setState(() => _pending = false);
+    }
   }
 
   void _openDetail(BuildContext context) {
+    final p = widget.photo;
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => CommunityPostDetailScreen(photoId: widget.photo.photoId),
+        builder: (_) => CommunityPostDetailScreen(
+          photoId: p.photoId,
+          authorName: p.authorName.isNotEmpty ? p.authorName : null,
+          authorAvatarUrl: p.authorAvatarUrl.isNotEmpty ? p.authorAvatarUrl : null,
+        ),
       ),
     );
   }
@@ -101,30 +134,33 @@ class _PhotoGridTileState extends State<PhotoGridTile> {
                 child: GestureDetector(
                   onTap: _toggleLike,
                   behavior: HitTestBehavior.opaque,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: Colors.black45,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          _liked ? Icons.favorite : Icons.favorite_border,
-                          color: _liked ? const Color(0xFFFF6B9D) : Colors.white,
-                          size: 11,
-                        ),
-                        const SizedBox(width: 2),
-                        Text(
-                          '$_likeCount',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w600,
+                  child: Opacity(
+                    opacity: _pending ? 0.6 : 1.0,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.black45,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _liked ? Icons.favorite : Icons.favorite_border,
+                            color: _liked ? const Color(0xFFFF6B9D) : Colors.white,
+                            size: 11,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 2),
+                          Text(
+                            '$_likeCount',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),

@@ -10,6 +10,9 @@ class PlaceProvider extends ChangeNotifier {
   PhotoZoneTag? _selectedTag;
   bool isLoading = false;
   String? error;
+  bool _isSaved = false;
+
+  bool get isSaved => _isSaved;
 
   PlaceProvider(this.placeId, this._api) {
     _load();
@@ -37,12 +40,30 @@ class PlaceProvider extends ChangeNotifier {
   /// 등록 등으로 데이터가 바뀐 뒤 상세를 다시 불러온다.
   Future<void> reload() => _load();
 
+  Future<void> toggleSave() async {
+    final prev = _isSaved;
+    _isSaved = !_isSaved;
+    notifyListeners();
+    try {
+      if (!prev) {
+        await _api.dio.post('/api/places/$placeId/saves');
+      } else {
+        await _api.dio.delete('/api/places/$placeId/saves');
+      }
+    } catch (_) {
+      _isSaved = prev;
+      notifyListeners();
+    }
+  }
+
   Future<void> _load() async {
     isLoading = true;
     notifyListeners();
     try {
       final res = await _api.dio.get('/api/places/$placeId');
-      _detail = PlaceDetail.fromJson(res.data as Map<String, dynamic>);
+      final data = res.data as Map<String, dynamic>;
+      _detail = PlaceDetail.fromJson(data);
+      _isSaved = data['saved'] as bool? ?? false;
     } catch (_) {
       error = '장소 정보를 불러오지 못했습니다.';
     } finally {

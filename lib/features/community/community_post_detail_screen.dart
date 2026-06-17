@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/api_client.dart';
 import '../../core/app_theme.dart';
 import '../../features/photo/photo_models.dart';
 import '../../features/photo/photo_service.dart';
@@ -57,7 +58,8 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
 
   String _resolveImageUrl(String url) {
     if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    return 'http://192.168.45.89:8080$url';
+    if (url.startsWith('/')) return '${ApiClient.baseUrl}$url';
+    return '${ApiClient.baseUrl}/$url';
   }
 
   @override

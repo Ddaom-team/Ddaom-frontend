@@ -63,8 +63,11 @@ class _PlaceDetailView extends StatelessWidget {
               ),
               actions: [
                 IconButton(
-                  icon: const Icon(Icons.favorite_border, color: Colors.white),
-                  onPressed: () {},
+                  icon: Icon(
+                    provider.isSaved ? Icons.bookmark : Icons.bookmark_border,
+                    color: Colors.white,
+                  ),
+                  onPressed: () => context.read<PlaceProvider>().toggleSave(),
                 ),
               ],
             ),
@@ -108,31 +111,14 @@ class _PlaceDetailView extends StatelessWidget {
         bottomNavigationBar: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {},
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppColors.primaryPink),
-                      foregroundColor: AppColors.primaryPink,
-                    ),
-                    child: const Text('저장'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 2,
-                  child: ElevatedButton(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryPink,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text('이렇게 찍어요'),
-                  ),
-                ),
-              ],
+            child: ElevatedButton(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+                backgroundColor: AppColors.primaryPink,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('이렇게 찍어요'),
             ),
           ),
         ),

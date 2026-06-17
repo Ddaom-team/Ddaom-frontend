@@ -74,7 +74,8 @@ class GridPhoto {
       authorAvatarUrl: '',
       location: '',
       hashtags: const [],
-      likeCount: 0,
+      likeCount: photo.likeCount,
+      liked: photo.liked,
     );
   }
 
