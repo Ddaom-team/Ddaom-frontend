@@ -28,6 +28,7 @@ class _HomeMapViewState extends State<HomeMapView> {
   String? _lastSelectedId;
   bool _errorShown = false;
   bool _syncing = false;
+  bool _needsSync = false;
   HomeProvider? _homeProvider;
 
   static const _normalSize = Size(36, 36);
@@ -39,25 +40,32 @@ class _HomeMapViewState extends State<HomeMapView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _homeProvider = context.read<HomeProvider>();
-        _homeProvider!.addListener(_checkError);
+        _homeProvider!.addListener(_onProviderChanged);
       }
     });
   }
 
   @override
   void dispose() {
-    _homeProvider?.removeListener(_checkError);
+    _homeProvider?.removeListener(_onProviderChanged);
     super.dispose();
   }
 
-  void _checkError() {
+  void _onProviderChanged() {
     if (!mounted) return;
-    final error = context.read<HomeProvider>().error;
+    final provider = context.read<HomeProvider>();
+    final error = provider.error;
     if (error != null && !_errorShown) {
       _errorShown = true;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
     }
     if (error == null) _errorShown = false;
+
+    if (_syncing) {
+      _needsSync = true;
+    } else {
+      _syncMarkers(provider);
+    }
   }
 
   Future<NOverlayImage> _getMarkerIcon(PlaceCategory category, bool selected) async {
@@ -74,11 +82,6 @@ class _HomeMapViewState extends State<HomeMapView> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<HomeProvider>();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _syncMarkers(provider);
-    });
-
     return NaverMap(
       options: const NaverMapViewOptions(
         initialCameraPosition: NCameraPosition(
@@ -89,11 +92,12 @@ class _HomeMapViewState extends State<HomeMapView> {
       ),
       onMapReady: (controller) {
         _controller = controller;
+        final provider = context.read<HomeProvider>();
         provider.registerMapController(controller);
         _syncMarkers(provider);
         _enableLocationOverlay(controller);
       },
-      onMapTapped: (_, latLng) => provider.clearSelection(),
+      onMapTapped: (_, latLng) => context.read<HomeProvider>().clearSelection(),
       onSymbolTapped: _onSymbolTapped,
     );
   }
@@ -180,8 +184,12 @@ class _HomeMapViewState extends State<HomeMapView> {
   }
 
   Future<void> _syncMarkers(HomeProvider provider) async {
-    if (_syncing) return;
+    if (_syncing) {
+      _needsSync = true;
+      return;
+    }
     _syncing = true;
+    _needsSync = false;
     try {
       final controller = _controller;
       if (controller == null) return;
@@ -285,6 +293,10 @@ class _HomeMapViewState extends State<HomeMapView> {
       _lastSelectedId = selectedId;
     } finally {
       _syncing = false;
+      if (_needsSync && mounted) {
+        _needsSync = false;
+        _syncMarkers(context.read<HomeProvider>());
+      }
     }
   }
 

@@ -560,7 +560,11 @@ class _FollowingFeedState extends State<_FollowingFeed>
         title: '팔로우하는 사람들의 최근 사진이 없습니다.',
       );
     }
-    return _PostGrid(posts: _posts);
+    return RefreshIndicator(
+      color: AppColors.primaryPink,
+      onRefresh: _load,
+      child: _PostGrid(posts: _posts),
+    );
   }
 }
 
@@ -654,7 +658,11 @@ class _PopularFeedState extends State<_PopularFeed>
         title: '인기 사진이 없습니다.',
       );
     }
-    return _PostGrid(posts: _posts);
+    return RefreshIndicator(
+      color: AppColors.primaryPink,
+      onRefresh: _load,
+      child: _PostGrid(posts: _posts),
+    );
   }
 }
 
