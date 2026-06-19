@@ -22,7 +22,7 @@ T parseResponse<T>(Response<dynamic> res, T Function(dynamic) fromJson) {
 }
 
 class ApiClient {
-  static const String baseUrl = 'http://13.209.40.178:8080'; //
+  static const String baseUrl = 'http://54.180.97.127:8080'; //
   // static const String baseUrl = 'http://10.0.2.2:8080'; // 로컬 테스트 (안드로이드 에뮬레이터)
   // static const String baseUrl = 'http://192.168.55.62:8080'; // 임서현 실기기
 
