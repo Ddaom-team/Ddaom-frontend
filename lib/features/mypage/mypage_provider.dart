@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../core/api_client.dart';
@@ -43,5 +44,14 @@ class MyPageProvider extends ChangeNotifier {
     if (_profile == null) return;
     _profile = _profile!.copyWith(name: name, avatarUrl: avatarUrl);
     notifyListeners();
+  }
+
+  Future<void> uploadProfileImage(String filePath) async {
+    final formData = FormData.fromMap({
+      'image': await MultipartFile.fromFile(filePath, filename: 'profile.jpg'),
+    });
+    final res = await _api.dio.patch('/api/users/me/profile-image', data: formData);
+    final data = res.data as Map<String, dynamic>;
+    updateProfile(avatarUrl: data['profileImage'] as String?);
   }
 }
