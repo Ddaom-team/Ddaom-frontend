@@ -50,7 +50,7 @@ Future<RegisterOutcome> registerNaverPlace({
   // 장소 대표 이미지를 네이버 이미지 검색으로 채운다(없으면 생략).
   String? thumbnailUrl;
   try {
-    thumbnailUrl = await NaverPlaceSearchService().searchImage(place.name);
+    thumbnailUrl = await NaverPlaceSearchService(api).searchImage(place.name);
   } catch (_) {
     thumbnailUrl = null;
   }

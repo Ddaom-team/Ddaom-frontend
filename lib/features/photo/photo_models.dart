@@ -83,6 +83,9 @@ class PhotoInfo {
   final int photoId;
   final int userId;
   final int? photoSpotId;
+  final String? photoSpotTitle;
+  final int? placeId;
+  final String? placeName;
   final String photoUrl;
   final String? tip;
   final PhotoMood mood;
@@ -100,6 +103,9 @@ class PhotoInfo {
     required this.photoId,
     required this.userId,
     this.photoSpotId,
+    this.photoSpotTitle,
+    this.placeId,
+    this.placeName,
     required this.photoUrl,
     this.tip,
     required this.mood,
@@ -118,6 +124,9 @@ class PhotoInfo {
         photoId: (json['photoId'] as num).toInt(),
         userId: (json['userId'] as num).toInt(),
         photoSpotId: (json['photoSpotId'] as num?)?.toInt(),
+        photoSpotTitle: json['photoSpotTitle'] as String?,
+        placeId: (json['placeId'] as num?)?.toInt(),
+        placeName: json['placeName'] as String?,
         photoUrl: json['photoUrl'] as String,
         tip: json['tip'] as String?,
         mood: PhotoMood.values.firstWhere(

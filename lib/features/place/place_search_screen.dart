@@ -22,7 +22,7 @@ class PlaceSearchScreen extends StatefulWidget {
 
 class _PlaceSearchScreenState extends State<PlaceSearchScreen> {
   final _searchCtrl = TextEditingController();
-  final _service = NaverPlaceSearchService();
+  late final _service = NaverPlaceSearchService(context.read<ApiClient>());
   Timer? _debounce;
   NaverMapController? _mapController;
   List<NaverPlace> _results = [];

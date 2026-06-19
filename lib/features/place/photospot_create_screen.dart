@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/api_client.dart';
@@ -17,6 +20,7 @@ class _PhotoSpotCreateScreenState extends State<PhotoSpotCreateScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
+  XFile? _pickedImage;
   bool _loading = false;
 
   @override
@@ -26,18 +30,38 @@ class _PhotoSpotCreateScreenState extends State<PhotoSpotCreateScreen> {
     super.dispose();
   }
 
+  Future<void> _pickImage() async {
+    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (picked != null && mounted) {
+      setState(() => _pickedImage = picked);
+    }
+  }
+
+  /// 선택한 사진을 S3 업로드 API로 올리고 imageUrl을 받는다.
+  Future<String> _uploadImage(ApiClient api, XFile image) async {
+    final formData = FormData.fromMap({
+      'image': await MultipartFile.fromFile(image.path, filename: image.name),
+    });
+    final res = await api.dio.post('/api/uploads/images', data: formData);
+    return (res.data as Map<String, dynamic>)['imageUrl'] as String;
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     try {
       final api = context.read<ApiClient>();
-      // 백엔드는 imageUrl(문자열)만 받음. 사진 파일 업로드 API가 준비되면
-      // imageUrl을 채워 함께 전송한다. 현재는 이름·설명만 등록.
+      // 사진을 골랐으면 먼저 S3에 업로드해 imageUrl을 받고, 포토존 생성에 함께 전송.
+      String? imageUrl;
+      if (_pickedImage != null) {
+        imageUrl = await _uploadImage(api, _pickedImage!);
+      }
       await api.dio.post(
         '/api/places/${widget.placeId}/photo-spots',
         data: {
           'title': _titleCtrl.text.trim(),
           'description': _descCtrl.text.trim(),
+          'imageUrl': ?imageUrl,
         },
       );
       if (!mounted) return;
@@ -81,23 +105,28 @@ class _PhotoSpotCreateScreenState extends State<PhotoSpotCreateScreen> {
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF5F5F5),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.info_outline, color: Colors.grey),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      '사진 첨부는 준비 중입니다. 지금은 이름과 설명만 등록됩니다.',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  ),
-                ],
+            GestureDetector(
+              onTap: _loading ? null : _pickImage,
+              child: Container(
+                height: 180,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F5F5),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: _pickedImage == null
+                    ? const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add_a_photo_outlined,
+                              color: Colors.grey, size: 32),
+                          SizedBox(height: 8),
+                          Text('대표 사진 추가 (선택)',
+                              style: TextStyle(color: Colors.grey)),
+                        ],
+                      )
+                    : Image.file(File(_pickedImage!.path), fit: BoxFit.cover),
               ),
             ),
             const SizedBox(height: 16),

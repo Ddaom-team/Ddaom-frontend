@@ -21,7 +21,7 @@ class HomeMapView extends StatefulWidget {
 
 class _HomeMapViewState extends State<HomeMapView> {
   NaverMapController? _controller;
-  final _searchService = NaverPlaceSearchService();
+  late final _searchService = NaverPlaceSearchService(context.read<ApiClient>());
   final Map<String, NMarker> _markers = {};
   final Map<String, NOverlayImage> _iconCache = {};
   NInfoWindow? _activeInfoWindow;
