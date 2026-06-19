@@ -28,12 +28,19 @@ class LoginScreen extends StatelessWidget {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 24),
-              const _Logo(),
-              const SizedBox(height: 14),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: MediaQuery.of(context).size.height -
+                  MediaQuery.of(context).padding.top -
+                  MediaQuery.of(context).padding.bottom -
+                  32,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const _Logo(),
+              const SizedBox(height: 8),
               const Text(
                 '따옴',
                 textAlign: TextAlign.center,
@@ -55,7 +62,7 @@ class LoginScreen extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               const Text(
-                '어디서, 어떻게 찍어야 잘나오는지\n알려주는 실시간 포토 가이드',
+                '섬세한 사진 가이드를 통해\n인생샷으로 따옴',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12,
@@ -63,9 +70,9 @@ class LoginScreen extends StatelessWidget {
                   height: 1.4,
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 30),
               const _LoginIllustration(),
-              const SizedBox(height: 24),
+              const SizedBox(height: 100),
               _GoogleLoginButton(
                 loading: loading,
                 onTap: loading ? null : () => _handleGoogleLogin(context),
@@ -74,6 +81,7 @@ class LoginScreen extends StatelessWidget {
               const _FooterNotice(),
               const SizedBox(height: 16),
             ],
+          ),
           ),
         ),
       ),
@@ -89,8 +97,8 @@ class _Logo extends StatelessWidget {
     return Center(
       child: Image.asset(
         'assets/images/Logo.png',
-        width: 72,
-        height: 72,
+        width: 50,
+        height: 50,
       ),
     );
   }
