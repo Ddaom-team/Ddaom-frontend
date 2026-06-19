@@ -6,6 +6,9 @@ class FollowingPhoto {
   final String nickname;
   final String? profileImage;
   final int? photoSpotId;
+  final String? photoSpotTitle;
+  final int? placeId;
+  final String? placeName;
   final String photoUrl;
   final String? tip;
   final PhotoMood mood;
@@ -23,6 +26,9 @@ class FollowingPhoto {
     required this.nickname,
     this.profileImage,
     this.photoSpotId,
+    this.photoSpotTitle,
+    this.placeId,
+    this.placeName,
     required this.photoUrl,
     this.tip,
     required this.mood,
@@ -41,6 +47,9 @@ class FollowingPhoto {
         nickname: (json['nickname'] ?? '사용자').toString(),
         profileImage: json['profileImage'] as String?,
         photoSpotId: (json['photoSpotId'] as num?)?.toInt(),
+        photoSpotTitle: json['photoSpotTitle'] as String?,
+        placeId: (json['placeId'] as num?)?.toInt(),
+        placeName: json['placeName'] as String?,
         photoUrl: json['photoUrl'] as String,
         tip: json['tip'] as String?,
         mood: PhotoMood.values.firstWhere(

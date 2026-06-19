@@ -69,6 +69,7 @@ class _PhotoGridTileState extends State<PhotoGridTile> {
           photoId: p.photoId,
           authorName: p.authorName.isNotEmpty ? p.authorName : null,
           authorAvatarUrl: p.authorAvatarUrl.isNotEmpty ? p.authorAvatarUrl : null,
+          location: p.location.isNotEmpty ? p.location : null,
         ),
       ),
     );

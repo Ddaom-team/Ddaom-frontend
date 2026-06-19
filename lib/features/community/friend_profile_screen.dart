@@ -329,7 +329,9 @@ class _FriendPhotosTabState extends State<_FriendPhotosTab> {
       imageUrl: imageUrl,
       authorName: widget.user.nickname,
       authorAvatarUrl: widget.user.profileImage ?? '',
-      location: '',
+      location: (photo.placeName != null && photo.photoSpotTitle != null)
+          ? '${photo.placeName} · ${photo.photoSpotTitle}'
+          : photo.placeName ?? photo.photoSpotTitle ?? '',
       hashtags: [photo.mood.label, photo.timeTag.label],
       likeCount: photo.likeCount,
       liked: photo.liked,
