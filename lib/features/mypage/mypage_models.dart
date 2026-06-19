@@ -1,6 +1,11 @@
 import '../../core/api_client.dart';
 import '../photo/photo_models.dart';
 
+String _buildLocation(String? placeName, String? spotTitle) {
+  if (placeName != null && spotTitle != null) return '$placeName · $spotTitle';
+  return placeName ?? spotTitle ?? '';
+}
+
 class UserProfile {
   final int userId;
   final String name;
@@ -70,9 +75,9 @@ class GridPhoto {
       photoId: photo.photoId,
       id: 'photo_${photo.photoId}',
       imageUrl: imageUrl,
-      authorName: '',
-      authorAvatarUrl: '',
-      location: '',
+      authorName: photo.nickname ?? '',
+      authorAvatarUrl: photo.profileImage ?? '',
+      location: _buildLocation(photo.placeName, photo.photoSpotTitle),
       hashtags: const [],
       likeCount: photo.likeCount,
       liked: photo.liked,

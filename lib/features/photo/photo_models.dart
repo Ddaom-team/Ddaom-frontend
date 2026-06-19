@@ -98,6 +98,9 @@ class PhotoInfo {
   final int likeCount;
   final String? nickname;
   final String? profileImage;
+  final String? photoSpotTitle;
+  final int? placeId;
+  final String? placeName;
 
   const PhotoInfo({
     required this.photoId,
@@ -118,6 +121,9 @@ class PhotoInfo {
     this.likeCount = 0,
     this.nickname,
     this.profileImage,
+    this.photoSpotTitle,
+    this.placeId,
+    this.placeName,
   });
 
   factory PhotoInfo.fromJson(Map<String, dynamic> json) => PhotoInfo(
@@ -154,6 +160,9 @@ class PhotoInfo {
         likeCount: (json['likeCount'] as num?)?.toInt() ?? 0,
         nickname: json['nickname'] as String?,
         profileImage: json['profileImage'] as String?,
+        photoSpotTitle: json['photoSpotTitle'] as String?,
+        placeId: (json['placeId'] as num?)?.toInt(),
+        placeName: json['placeName'] as String?,
       );
 }
 

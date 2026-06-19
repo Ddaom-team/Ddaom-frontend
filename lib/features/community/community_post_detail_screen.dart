@@ -517,6 +517,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
                     referencePhotoUrl: _photo != null
                         ? _resolveImageUrl(_photo!.photoUrl)
                         : null,
+                    photoType: _photo?.photoType,
                   ),
                 ),
               );

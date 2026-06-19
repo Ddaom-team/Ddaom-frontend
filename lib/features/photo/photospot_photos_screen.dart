@@ -3,7 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../../core/api_client.dart';
 import '../../core/app_theme.dart';
-import '../community/community_post_detail_screen.dart';
+import '../mypage/mypage_models.dart';
+import '../mypage/widgets/photo_grid_tile.dart';
 import 'photo_models.dart';
 import 'photo_service.dart';
 
@@ -60,21 +61,21 @@ class _PhotospotPhotosScreenState extends State<PhotospotPhotosScreen> {
     }
   }
 
-  String _resolveImageUrl(String url) {
-    if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    if (url.startsWith('/')) return '${ApiClient.baseUrl}$url';
-    return '${ApiClient.baseUrl}/$url';
-  }
-
-  void _openDetail(PhotoInfo photo) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => CommunityPostDetailScreen(
-          photoId: photo.photoId,
-          location: _locationLabel,
-        ),
-      ),
+  GridPhoto _toGridPhoto(PhotoInfo photo) {
+    final url = photo.photoUrl;
+    final imageUrl = (url.startsWith('http://') || url.startsWith('https://'))
+        ? url
+        : '${ApiClient.baseUrl}$url';
+    return GridPhoto(
+      photoId: photo.photoId,
+      id: 'spot_${photo.photoId}',
+      imageUrl: imageUrl,
+      authorName: photo.nickname ?? '',
+      authorAvatarUrl: photo.profileImage ?? '',
+      location: _locationLabel,
+      hashtags: const [],
+      likeCount: photo.likeCount,
+      liked: photo.liked,
     );
   }
 
@@ -124,26 +125,17 @@ class _PhotospotPhotosScreenState extends State<PhotospotPhotosScreen> {
             style: TextStyle(color: AppColors.textMuted)),
       );
     }
+    final gridPhotos = photos.map(_toGridPhoto).toList();
     return GridView.builder(
       padding: const EdgeInsets.all(2),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         crossAxisSpacing: 2,
         mainAxisSpacing: 2,
+        childAspectRatio: 0.72,
       ),
-      itemCount: photos.length,
-      itemBuilder: (context, i) {
-        final photo = photos[i];
-        return GestureDetector(
-          onTap: () => _openDetail(photo),
-          child: Image.network(
-            _resolveImageUrl(photo.photoUrl),
-            fit: BoxFit.cover,
-            errorBuilder: (ctx, err, stack) =>
-                Container(color: AppColors.illustrationBox),
-          ),
-        );
-      },
+      itemCount: gridPhotos.length,
+      itemBuilder: (context, i) => PhotoGridTile(photo: gridPhotos[i]),
     );
   }
 }

@@ -522,7 +522,9 @@ class _FollowingFeedState extends State<_FollowingFeed>
         authorName: p.nickname,
         authorAvatarUrl: p.profileImage ?? '',
         followerCount: 0,
-        location: '',
+        location: (p.placeName != null && p.photoSpotTitle != null)
+            ? '${p.placeName} · ${p.photoSpotTitle}'
+            : p.placeName ?? p.photoSpotTitle ?? '',
         hashtags: [p.mood.label, p.timeTag.label],
         mood: p.mood,
         timeTag: p.timeTag,
@@ -619,7 +621,9 @@ class _PopularFeedState extends State<_PopularFeed>
       authorName: p.nickname ?? '',
       authorAvatarUrl: resolvedAvatar,
       followerCount: 0,
-      location: '',
+      location: (p.placeName != null && p.photoSpotTitle != null)
+          ? '${p.placeName} · ${p.photoSpotTitle}'
+          : p.placeName ?? p.photoSpotTitle ?? '',
       hashtags: [p.mood.label, p.timeTag.label],
       mood: p.mood,
       timeTag: p.timeTag,
