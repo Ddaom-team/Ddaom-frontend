@@ -151,6 +151,24 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     return '${ApiClient.baseUrl}/$url';
   }
 
+  /// 표시할 촬영 장소 라벨. 호출처가 명시한 location을 우선하고,
+  /// 없으면 사진 응답의 placeName·photoSpotTitle로 '장소명 · 포토존명'을 만든다.
+  String? get _effectiveLocation {
+    if (widget.location != null && widget.location!.isNotEmpty) {
+      return widget.location;
+    }
+    final photo = _photo;
+    if (photo == null) return null;
+    final place = photo.placeName;
+    final spot = photo.photoSpotTitle;
+    final hasPlace = place != null && place.isNotEmpty;
+    final hasSpot = spot != null && spot.isNotEmpty;
+    if (hasPlace && hasSpot) return '$place · $spot';
+    if (hasPlace) return place;
+    if (hasSpot) return spot;
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -190,6 +208,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
 
   Widget _buildContent() {
     final photo = _photo!;
+    final location = _effectiveLocation;
     return Column(
       children: [
         Expanded(
@@ -202,8 +221,8 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
                 _buildDivider(),
                 _buildUserSection(),
                 _buildDivider(),
-                if (widget.location != null) ...[
-                  _buildLocationSection(),
+                if (location != null) ...[
+                  _buildLocationSection(location),
                   _buildDivider(),
                 ],
                 if (photo.tip != null && photo.tip!.isNotEmpty) ...[
@@ -370,7 +389,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     );
   }
 
-  Widget _buildLocationSection() {
+  Widget _buildLocationSection(String location) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Column(
@@ -386,7 +405,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
               const Icon(Icons.location_on, size: 16, color: AppColors.primaryPink),
               const SizedBox(width: 4),
               Text(
-                widget.location!,
+                location,
                 style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textMain),
               ),
             ],
