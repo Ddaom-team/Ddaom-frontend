@@ -27,20 +27,6 @@ class PhotozoneCard extends StatelessWidget {
             children: [
               Text(zone.name,
                   style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  const Icon(Icons.favorite_border, size: 14, color: AppColors.textMuted),
-                  const SizedBox(width: 4),
-                  Text('${zone.likeCount}',
-                      style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
-                  const SizedBox(width: 12),
-                  const Icon(Icons.bookmark_border, size: 14, color: AppColors.textMuted),
-                  const SizedBox(width: 4),
-                  Text('${zone.saveCount}',
-                      style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
-                ],
-              ),
             ],
           ),
         ),
