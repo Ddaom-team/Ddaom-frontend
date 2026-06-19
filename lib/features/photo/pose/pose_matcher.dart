@@ -22,12 +22,20 @@ class PoseGuideResult {
 class PoseMatcher {
   static const _minimumLikelihood = 0.45;
 
-  PoseGuideResult compare(PoseSnapshot reference, PoseSnapshot current) {
-    final referenceBounds = _bounds(reference);
-    final currentBounds = _bounds(current);
+  PoseGuideResult compare(
+    PoseSnapshot reference,
+    PoseSnapshot current, {
+    bool upperBodyOnly = false,
+  }) {
+    final landmarkTypes =
+        upperBodyOnly ? _upperBodyLandmarks : _fullBodyLandmarks;
+    final referenceBounds = _bounds(reference, landmarkTypes);
+    final currentBounds = _bounds(current, landmarkTypes);
     if (referenceBounds == null || currentBounds == null) {
-      return const PoseGuideResult(
-        message: '전신이 보이도록 카메라를 맞춰주세요',
+      return PoseGuideResult(
+        message: upperBodyOnly
+            ? '얼굴과 상반신이 보이도록 맞춰주세요'
+            : '전신이 보이도록 카메라를 맞춰주세요',
         score: 0,
         color: Colors.orange,
         ready: false,
@@ -43,6 +51,7 @@ class PoseMatcher {
       current,
       referenceBounds,
       currentBounds,
+      landmarkTypes,
     );
 
     final positionScore =
@@ -73,7 +82,12 @@ class PoseMatcher {
       return _result('조금 위로 이동해주세요', score);
     }
     if (poseError > 0.18) {
-      return _result(_jointInstruction(reference, current), score);
+      return _result(
+        upperBodyOnly
+            ? '어깨와 팔 자세를 사진처럼 맞춰보세요'
+            : _jointInstruction(reference, current),
+        score,
+      );
     }
 
     return PoseGuideResult(
@@ -93,12 +107,47 @@ class PoseMatcher {
     );
   }
 
-  Rect? _bounds(PoseSnapshot snapshot) {
-    final visible = snapshot.points.values
+  static const _fullBodyLandmarks = <PoseLandmarkType>{
+    PoseLandmarkType.nose,
+    PoseLandmarkType.leftShoulder,
+    PoseLandmarkType.rightShoulder,
+    PoseLandmarkType.leftElbow,
+    PoseLandmarkType.rightElbow,
+    PoseLandmarkType.leftWrist,
+    PoseLandmarkType.rightWrist,
+    PoseLandmarkType.leftHip,
+    PoseLandmarkType.rightHip,
+    PoseLandmarkType.leftKnee,
+    PoseLandmarkType.rightKnee,
+    PoseLandmarkType.leftAnkle,
+    PoseLandmarkType.rightAnkle,
+  };
+
+  static const _upperBodyLandmarks = <PoseLandmarkType>{
+    PoseLandmarkType.nose,
+    PoseLandmarkType.leftEar,
+    PoseLandmarkType.rightEar,
+    PoseLandmarkType.leftShoulder,
+    PoseLandmarkType.rightShoulder,
+    PoseLandmarkType.leftElbow,
+    PoseLandmarkType.rightElbow,
+    PoseLandmarkType.leftWrist,
+    PoseLandmarkType.rightWrist,
+    PoseLandmarkType.leftHip,
+    PoseLandmarkType.rightHip,
+  };
+
+  Rect? _bounds(
+    PoseSnapshot snapshot,
+    Set<PoseLandmarkType> landmarkTypes,
+  ) {
+    final visible = landmarkTypes
+        .map((type) => snapshot.points[type])
+        .whereType<PosePoint>()
         .where((point) => point.likelihood >= _minimumLikelihood)
         .map((point) => point.position)
         .toList();
-    if (visible.length < 8) return null;
+    if (visible.length < 6) return null;
 
     var left = 1.0;
     var top = 1.0;
@@ -118,25 +167,11 @@ class PoseMatcher {
     PoseSnapshot current,
     Rect referenceBounds,
     Rect currentBounds,
+    Set<PoseLandmarkType> landmarkTypes,
   ) {
-    const important = {
-      PoseLandmarkType.leftShoulder,
-      PoseLandmarkType.rightShoulder,
-      PoseLandmarkType.leftElbow,
-      PoseLandmarkType.rightElbow,
-      PoseLandmarkType.leftWrist,
-      PoseLandmarkType.rightWrist,
-      PoseLandmarkType.leftHip,
-      PoseLandmarkType.rightHip,
-      PoseLandmarkType.leftKnee,
-      PoseLandmarkType.rightKnee,
-      PoseLandmarkType.leftAnkle,
-      PoseLandmarkType.rightAnkle,
-    };
-
     var total = 0.0;
     var count = 0;
-    for (final type in important) {
+    for (final type in landmarkTypes) {
       final target = reference.points[type];
       final live = current.points[type];
       if (target == null ||

@@ -11,6 +11,7 @@ import 'package:google_mlkit_commons/google_mlkit_commons.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 
 import 'photo_selection_screen.dart';
+import 'photo_models.dart';
 import 'pose/pose_matcher.dart';
 import 'pose/pose_overlay_painter.dart';
 import 'pose/pose_snapshot.dart';
@@ -19,7 +20,14 @@ import '../place/place_models.dart';
 class DdaogiCameraScreen extends StatefulWidget {
   final PhotoZone? photoZone;
   final String? referencePhotoUrl;
-  const DdaogiCameraScreen({super.key, this.photoZone, this.referencePhotoUrl});
+  final PhotoType? photoType;
+
+  const DdaogiCameraScreen({
+    super.key,
+    this.photoZone,
+    this.referencePhotoUrl,
+    this.photoType,
+  });
 
   @override
   State<DdaogiCameraScreen> createState() => _DdaogiCameraScreenState();
@@ -83,13 +91,43 @@ class _DdaogiCameraScreenState extends State<DdaogiCameraScreen> {
     DeviceOrientation.landscapeRight: 270,
   };
 
+  bool get _usesPoseGuide =>
+      widget.photoType == PhotoType.FULL_BODY ||
+      widget.photoType == PhotoType.UPPER_BODY;
+
+  bool get _usesCompositionGuide =>
+      widget.referencePhotoUrl != null &&
+      widget.referencePhotoUrl!.isNotEmpty &&
+      !_usesPoseGuide;
+
+  bool get _isUpperBodyGuide => widget.photoType == PhotoType.UPPER_BODY;
+
+  String get _compositionGuideMessage {
+    switch (widget.photoType) {
+      case PhotoType.SELFIE:
+        return '얼굴 위치와 기울기를 원본에 맞춰보세요';
+      case PhotoType.FOOD:
+        return '접시 위치와 촬영 각도를 원본에 맞춰보세요';
+      case PhotoType.LANDSCAPE:
+        return '수평선과 주요 배경 위치를 원본에 맞춰보세요';
+      case PhotoType.ETC:
+      case null:
+        return '반투명 원본에 구도를 맞춰보세요';
+      case PhotoType.FULL_BODY:
+      case PhotoType.UPPER_BODY:
+        return _guideResult.message;
+    }
+  }
+
   // 카메라를 나갈 때 한꺼번에 등록하기 위해 촬영분을 누적한다.
   final List<XFile> _captured = [];
 
   @override
   void initState() {
     super.initState();
-    _loadReferencePose();
+    if (_usesPoseGuide) {
+      _loadReferencePose();
+    }
     _initCamera();
   }
 
@@ -286,7 +324,8 @@ class _DdaogiCameraScreenState extends State<DdaogiCameraScreen> {
     CameraController controller,
     CameraDescription camera,
   ) async {
-    if (!_isGuideOn ||
+    if (!_usesPoseGuide ||
+        !_isGuideOn ||
         !controller.value.isInitialized ||
         controller.value.isStreamingImages) {
       return;
@@ -323,7 +362,9 @@ class _DdaogiCameraScreenState extends State<DdaogiCameraScreen> {
     if (controller == null || !controller.value.isInitialized) return;
     if (enabled) {
       final camera = _activeCamera;
-      if (camera != null) await _startPoseStream(controller, camera);
+      if (_usesPoseGuide && camera != null) {
+        await _startPoseStream(controller, camera);
+      }
     } else {
       await _stopPoseStream();
     }
@@ -335,6 +376,7 @@ class _DdaogiCameraScreenState extends State<DdaogiCameraScreen> {
     CameraDescription camera,
   ) async {
     if (!_isGuideOn ||
+        !_usesPoseGuide ||
         _isProcessingFrame ||
         controller != _controller ||
         !mounted) {
@@ -377,7 +419,11 @@ class _DdaogiCameraScreenState extends State<DdaogiCameraScreen> {
               color: Color(0xFF51D88A),
               ready: true,
             )
-          : _poseMatcher.compare(reference, snapshot);
+          : _poseMatcher.compare(
+              reference,
+              snapshot,
+              upperBodyOnly: _isUpperBodyGuide,
+            );
 
       setState(() {
         _currentPose = snapshot;
@@ -601,9 +647,12 @@ class _DdaogiCameraScreenState extends State<DdaogiCameraScreen> {
 
     final message = _isReferenceLoading
         ? '참조 사진을 분석하고 있어요'
-        : (_referenceError ?? _guideResult.message);
+        : (_referenceError ??
+              (_usesCompositionGuide
+                  ? _compositionGuideMessage
+                  : _guideResult.message));
     final statusColor = _referenceError == null
-        ? _guideResult.color
+        ? (_usesCompositionGuide ? Colors.white : _guideResult.color)
         : Colors.orangeAccent;
 
     return Container(
@@ -632,7 +681,11 @@ class _DdaogiCameraScreenState extends State<DdaogiCameraScreen> {
               shape: BoxShape.circle,
             ),
             child: Icon(
-              _guideResult.ready ? Icons.check_rounded : Icons.directions_run,
+              _usesCompositionGuide
+                  ? Icons.filter_center_focus
+                  : (_guideResult.ready
+                        ? Icons.check_rounded
+                        : Icons.directions_run),
               color: statusColor,
               size: 17,
             ),
@@ -650,7 +703,7 @@ class _DdaogiCameraScreenState extends State<DdaogiCameraScreen> {
               ),
             ),
           ),
-          if (_referencePose != null) ...[
+          if (_usesPoseGuide && _referencePose != null) ...[
             const SizedBox(width: 10),
             Text(
               '${(_guideResult.score * 100).round()}%',
@@ -764,6 +817,26 @@ class _DdaogiCameraScreenState extends State<DdaogiCameraScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCompositionOverlay() {
+    final url = widget.referencePhotoUrl;
+    if (!_isGuideOn || !_usesCompositionGuide || url == null || url.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: Opacity(
+          opacity: 0.18,
+          child: Image.network(
+            url,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+          ),
+        ),
       ),
     );
   }
@@ -983,8 +1056,9 @@ class _DdaogiCameraScreenState extends State<DdaogiCameraScreen> {
               child: Stack(
                 children: [
                   _buildCameraPreview(),
+                  _buildCompositionOverlay(),
                   _buildCameraShade(),
-                  if (_isGuideOn)
+                  if (_isGuideOn && _usesPoseGuide)
                     Positioned.fill(
                       child: IgnorePointer(
                         child: CustomPaint(
