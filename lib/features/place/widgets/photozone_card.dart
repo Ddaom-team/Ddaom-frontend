@@ -27,6 +27,15 @@ class PhotozoneCard extends StatelessWidget {
             children: [
               Text(zone.name,
                   style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  const Icon(Icons.photo_camera_outlined, size: 13, color: AppColors.textMuted),
+                  const SizedBox(width: 4),
+                  Text('사진 ${zone.photoCount}장',
+                      style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                ],
+              ),
             ],
           ),
         ),

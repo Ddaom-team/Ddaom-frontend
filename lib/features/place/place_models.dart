@@ -18,16 +18,14 @@ class PhotoZone {
   final String id;
   final String name;
   final String? imageUrl;
-  final int likeCount;
-  final int saveCount;
+  final int photoCount;
   final List<PhotoZoneTag> tags;
 
   const PhotoZone({
     required this.id,
     required this.name,
     this.imageUrl,
-    required this.likeCount,
-    required this.saveCount,
+    this.photoCount = 0,
     required this.tags,
   });
 
@@ -35,8 +33,7 @@ class PhotoZone {
     id: json['photoSpotId'].toString(),
     name: json['title'] as String? ?? '',
     imageUrl: json['imageUrl'] as String?,
-    likeCount: 0,
-    saveCount: 0,
+    photoCount: (json['photoCount'] as num?)?.toInt() ?? 0,
     tags: [],
   );
 }
@@ -115,19 +112,19 @@ class PlaceDetail {
       PhotoZone(
         id: 'z1', name: '2층 창가 자리',
         imageUrl: 'https://picsum.photos/seed/z1/300/300',
-        likeCount: 523, saveCount: 341,
+        photoCount: 12,
         tags: [PhotoZoneTag.indoor, PhotoZoneTag.window],
       ),
       PhotoZone(
         id: 'z2', name: '종정 나무 앞',
         imageUrl: 'https://picsum.photos/seed/z2/300/300',
-        likeCount: 287, saveCount: 198,
+        photoCount: 7,
         tags: [PhotoZoneTag.outdoor],
       ),
       PhotoZone(
         id: 'z3', name: '입구 계단',
         imageUrl: 'https://picsum.photos/seed/z3/300/300',
-        likeCount: 142, saveCount: 87,
+        photoCount: 3,
         tags: [PhotoZoneTag.entrance, PhotoZoneTag.staircase],
       ),
     ],
