@@ -20,12 +20,6 @@ class LoginScreen extends StatelessWidget {
     }
   }
 
-  void _showOtherLogin(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('준비 중입니다')),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final loading = context.watch<AuthProvider>().loading;
@@ -70,27 +64,11 @@ class LoginScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              const _IllustrationPlaceholder(),
+              const _LoginIllustration(),
               const SizedBox(height: 24),
               _GoogleLoginButton(
                 loading: loading,
                 onTap: loading ? null : () => _handleGoogleLogin(context),
-              ),
-              const SizedBox(height: 16),
-              const _OrDivider(),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: loading ? null : () => _showOtherLogin(context),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.primaryPink,
-                ),
-                child: const Text(
-                  '다른 방법으로 로그인',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
               ),
               const SizedBox(height: 12),
               const _FooterNotice(),
@@ -109,49 +87,27 @@ class _Logo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Container(
+      child: Image.asset(
+        'assets/images/Logo.png',
         width: 72,
         height: 72,
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [AppColors.secondaryPink, AppColors.primaryPink],
-          ),
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primaryPink.withValues(alpha: 0.25),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: const Icon(
-          Icons.photo_camera,
-          color: Colors.white,
-          size: 36,
-        ),
       ),
     );
   }
 }
 
-class _IllustrationPlaceholder extends StatelessWidget {
-  const _IllustrationPlaceholder();
+class _LoginIllustration extends StatelessWidget {
+  const _LoginIllustration();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 160,
-      decoration: BoxDecoration(
-        color: AppColors.illustrationBox,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      alignment: Alignment.center,
-      child: const Text(
-        '일러스트',
-        style: TextStyle(color: AppColors.textMuted, fontSize: 14),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: Image.asset(
+        'assets/images/login_illustration.png',
+        height: 160,
+        fit: BoxFit.cover,
+        alignment: Alignment.center,
       ),
     );
   }
@@ -265,27 +221,6 @@ class _GoogleGPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _OrDivider extends StatelessWidget {
-  const _OrDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: const [
-        Expanded(child: Divider(color: AppColors.divider, thickness: 1)),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 12),
-          child: Text(
-            '또는',
-            style: TextStyle(color: AppColors.textMuted, fontSize: 12),
-          ),
-        ),
-        Expanded(child: Divider(color: AppColors.divider, thickness: 1)),
-      ],
-    );
-  }
 }
 
 class _FooterNotice extends StatelessWidget {
