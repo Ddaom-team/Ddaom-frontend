@@ -23,7 +23,6 @@ class _CameraScreenState extends State<CameraScreen> {
   // 현재 사용 중인 카메라 인덱스 (후면 광각 = 0, 전면 = 1 등)
   int _selectedCameraIndex = 0;
   bool _isInitialized = false;
-  bool _isGuideOn = true;
   bool _isTakingPicture = false;
   bool _isSaving = false;
 
@@ -301,7 +300,7 @@ class _CameraScreenState extends State<CameraScreen> {
           ),
           const Spacer(),
           const Text(
-            '가이드 카메라',
+            '내맘대로 카메라',
             style: TextStyle(
               color: Colors.white,
               fontSize: 18,
@@ -314,98 +313,6 @@ class _CameraScreenState extends State<CameraScreen> {
             onTap: _switchCamera,
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildGuideCard() {
-    if (!_isGuideOn) return const SizedBox.shrink();
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.55),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.12),
-          ),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    '선택한 포토존',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  SizedBox(height: 6),
-                  Text(
-                    widget.photoZone?.name ?? '포토존을 선택해주세요',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'TIP  창문을 오른쪽에 두고\n인물은 화면의 왼쪽에 세워보세요!',
-                    style: TextStyle(
-                      color: Colors.white,
-                      height: 1.35,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Container(
-              width: 70,
-              height: 88,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white24),
-              ),
-              child: const Icon(
-                Icons.image_outlined,
-                color: Colors.white70,
-                size: 32,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCameraGuide() {
-    if (!_isGuideOn) return const SizedBox.shrink();
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 42),
-      child: AspectRatio(
-        aspectRatio: 3 / 4,
-        child: CustomPaint(
-          painter: _GuideFramePainter(),
-          child: Center(
-            child: Icon(
-              Icons.accessibility_new,
-              color: Colors.white.withValues(alpha: 0.45),
-              size: 110,
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -466,7 +373,7 @@ class _CameraScreenState extends State<CameraScreen> {
                 children: [
                   _albumPreview(),
                   _shutterButton(),
-                  _guideToggleButton(),
+                  const SizedBox(width: 58, height: 58),
                 ],
               ),
             ],
@@ -550,32 +457,6 @@ class _CameraScreenState extends State<CameraScreen> {
     );
   }
 
-  Widget _guideToggleButton() {
-    return GestureDetector(
-      onTap: () => setState(() => _isGuideOn = !_isGuideOn),
-      child: Container(
-        width: 70,
-        height: 58,
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.35),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white70, width: 1.3),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          _isGuideOn ? '가이드\nON' : '가이드\nOFF',
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: Colors.white,
-            height: 1.25,
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _circleIconButton({
     required IconData icon,
     required VoidCallback onTap,
@@ -620,25 +501,9 @@ class _CameraScreenState extends State<CameraScreen> {
                   Container(color: Colors.black.withValues(alpha: 0.22)),
                   SafeArea(
                     bottom: false,
-                    child: Stack(
-                      children: [
-                        Align(
-                          alignment: Alignment.topCenter,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              _buildTopBar(),
-                              _buildGuideCard(),
-                            ],
-                          ),
-                        ),
-                        Center(
-                          child: Transform.translate(
-                            offset: const Offset(0, 40),
-                            child: _buildCameraGuide(),
-                          ),
-                        ),
-                      ],
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: _buildTopBar(),
                     ),
                   ),
                 ],
@@ -650,41 +515,4 @@ class _CameraScreenState extends State<CameraScreen> {
       ),
     );
   }
-}
-
-class _GuideFramePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final linePaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.5)
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke;
-
-    final cornerPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.85)
-      ..strokeWidth = 3
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-
-    final centerY = size.height * 0.52;
-    canvas.drawLine(Offset(0, centerY), Offset(size.width, centerY), linePaint);
-
-    const cornerLength = 32.0;
-    final corners = [
-      [Offset.zero, Offset(cornerLength, 0)],
-      [Offset.zero, Offset(0, cornerLength)],
-      [Offset(size.width, 0), Offset(size.width - cornerLength, 0)],
-      [Offset(size.width, 0), Offset(size.width, cornerLength)],
-      [Offset(0, size.height), Offset(cornerLength, size.height)],
-      [Offset(0, size.height), Offset(0, size.height - cornerLength)],
-      [Offset(size.width, size.height), Offset(size.width - cornerLength, size.height)],
-      [Offset(size.width, size.height), Offset(size.width, size.height - cornerLength)],
-    ];
-    for (final pair in corners) {
-      canvas.drawLine(pair[0], pair[1], cornerPaint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
