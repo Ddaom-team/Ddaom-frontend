@@ -18,12 +18,23 @@ class MyPageScreen extends StatefulWidget {
 }
 
 class _MyPageScreenState extends State<MyPageScreen> {
+  final _myPhotosKey = GlobalKey<MyPhotosTabState>();
+  final _likedZonesKey = GlobalKey<LikedZonesTabState>();
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<MyPageProvider>().loadProfile();
     });
+  }
+
+  Future<void> _onRefresh() async {
+    await Future.wait([
+      context.read<MyPageProvider>().loadProfile(),
+      _myPhotosKey.currentState?.reload() ?? Future.value(),
+      _likedZonesKey.currentState?.reload() ?? Future.value(),
+    ]);
   }
 
   @override
@@ -101,16 +112,24 @@ class _MyPageScreenState extends State<MyPageScreen> {
             ? const Center(child: CircularProgressIndicator(color: AppColors.primaryPink))
             : provider.profile == null
                 ? _ErrorView(error: provider.error, onRetry: provider.loadProfile)
-                : NestedScrollView(
-                    headerSliverBuilder: (context, _) => [
-                      SliverToBoxAdapter(child: ProfileHeader(profile: provider.profile!)),
-                      const SliverPersistentHeader(
-                        pinned: true,
-                        delegate: _TabBarDelegate(),
+                : RefreshIndicator(
+                    color: AppColors.primaryPink,
+                    notificationPredicate: (n) => n.depth == 2,
+                    onRefresh: _onRefresh,
+                    child: NestedScrollView(
+                      headerSliverBuilder: (context, _) => [
+                        SliverToBoxAdapter(child: ProfileHeader(profile: provider.profile!)),
+                        const SliverPersistentHeader(
+                          pinned: true,
+                          delegate: _TabBarDelegate(),
+                        ),
+                      ],
+                      body: TabBarView(
+                        children: [
+                          MyPhotosTab(key: _myPhotosKey),
+                          LikedZonesTab(key: _likedZonesKey),
+                        ],
                       ),
-                    ],
-                    body: const TabBarView(
-                      children: [MyPhotosTab(), LikedZonesTab()],
                     ),
                   ),
       ),
