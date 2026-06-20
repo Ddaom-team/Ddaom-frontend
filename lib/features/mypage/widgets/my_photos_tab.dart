@@ -10,10 +10,10 @@ class MyPhotosTab extends StatefulWidget {
   const MyPhotosTab({super.key});
 
   @override
-  State<MyPhotosTab> createState() => _MyPhotosTabState();
+  State<MyPhotosTab> createState() => MyPhotosTabState();
 }
 
-class _MyPhotosTabState extends State<MyPhotosTab> {
+class MyPhotosTabState extends State<MyPhotosTab> {
   List<GridPhoto>? _photos;
   bool _loading = true;
   String? _error;
@@ -23,6 +23,8 @@ class _MyPhotosTabState extends State<MyPhotosTab> {
     super.initState();
     _load();
   }
+
+  Future<void> reload() => _load();
 
   Future<void> _load() async {
     setState(() {

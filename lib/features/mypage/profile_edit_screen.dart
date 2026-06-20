@@ -16,13 +16,16 @@ class ProfileEditScreen extends StatefulWidget {
 
 class _ProfileEditScreenState extends State<ProfileEditScreen> {
   late TextEditingController _nameCtrl;
+  late String _originalName;
   String? _localAvatarPath;
+  bool _saving = false;
 
   @override
   void initState() {
     super.initState();
     final profile = context.read<MyPageProvider>().profile;
-    _nameCtrl = TextEditingController(text: profile?.name ?? '');
+    _originalName = profile?.name ?? '';
+    _nameCtrl = TextEditingController(text: _originalName);
   }
 
   @override
@@ -37,12 +40,26 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     if (file != null) setState(() => _localAvatarPath = file.path);
   }
 
-  void _save() {
-    context.read<MyPageProvider>().updateProfile(
-      name: _nameCtrl.text.trim().isEmpty ? null : _nameCtrl.text.trim(),
-      avatarUrl: _localAvatarPath,
-    );
-    Navigator.pop(context);
+  Future<void> _save() async {
+    final provider = context.read<MyPageProvider>();
+    final newName = _nameCtrl.text.trim();
+    setState(() => _saving = true);
+    try {
+      await Future.wait([
+        if (newName.isNotEmpty && newName != _originalName)
+          provider.updateNickname(newName),
+        if (_localAvatarPath != null)
+          provider.uploadProfileImage(_localAvatarPath!),
+      ]);
+      if (mounted) Navigator.pop(context);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('저장에 실패했습니다. 다시 시도해주세요.')),
+        );
+        setState(() => _saving = false);
+      }
+    }
   }
 
   @override
@@ -51,10 +68,23 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       appBar: AppBar(
         title: const Text('프로필 편집'),
         actions: [
-          TextButton(
-            onPressed: _save,
-            child: const Text('완료', style: TextStyle(color: AppColors.primaryPink)),
-          ),
+          if (_saving)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.primaryPink,
+                ),
+              ),
+            )
+          else
+            TextButton(
+              onPressed: _save,
+              child: const Text('완료', style: TextStyle(color: AppColors.primaryPink)),
+            ),
         ],
       ),
       body: SingleChildScrollView(
@@ -62,16 +92,19 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         child: Column(
           children: [
             GestureDetector(
-              onTap: _pickImage,
+              onTap: _saving ? null : _pickImage,
               child: Stack(
                 children: [
                   CircleAvatar(
                     radius: 50,
                     backgroundImage: _localAvatarPath != null
-                        ? FileImage(File(_localAvatarPath!))
-                        : null,
+                        ? FileImage(File(_localAvatarPath!)) as ImageProvider
+                        : (context.watch<MyPageProvider>().profile?.avatarUrl?.isNotEmpty ?? false)
+                            ? NetworkImage(context.watch<MyPageProvider>().profile!.avatarUrl!)
+                            : null,
                     backgroundColor: AppColors.illustrationBox,
-                    child: _localAvatarPath == null
+                    child: (_localAvatarPath == null &&
+                            (context.watch<MyPageProvider>().profile?.avatarUrl?.isEmpty ?? true))
                         ? const Icon(Icons.person, size: 50, color: AppColors.textMuted)
                         : null,
                   ),

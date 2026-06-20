@@ -46,6 +46,9 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
   bool? _following;
   bool _followBusy = false;
 
+  bool _isMe = false;
+  bool _deletePending = false;
+
   @override
   void initState() {
     super.initState();
@@ -85,11 +88,48 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
         followService.isFollowing(userId),
       ]);
       if (!mounted) return;
+      final author = results[0] as UserProfile;
+      final myUserId = context.read<MyPageProvider>().profile?.userId;
       setState(() {
-        _author = results[0] as UserProfile;
+        _author = author;
         _following = results[1] as bool;
+        _isMe = myUserId != null && myUserId == author.userId;
       });
     } catch (_) {}
+  }
+
+  Future<void> _deletePhoto() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('사진 삭제'),
+        content: const Text('이 사진을 삭제하시겠습니까?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('삭제'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _deletePending = true);
+    try {
+      await context.read<PhotoService>().deletePhoto(widget.photoId);
+      if (mounted) Navigator.pop(context, true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('삭제에 실패했습니다. 다시 시도해주세요.')),
+        );
+        setState(() => _deletePending = false);
+      }
+    }
   }
 
   Future<void> _toggleFollow() async {
@@ -180,6 +220,22 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          if (_isMe)
+            IconButton(
+              icon: _deletePending
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.textMuted,
+                      ),
+                    )
+                  : const Icon(Icons.delete_outline, color: AppColors.textMuted),
+              onPressed: _deletePending ? null : _deletePhoto,
+            ),
+        ],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: AppColors.primaryPink))
@@ -290,9 +346,6 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     final avatarUrl = _author?.avatarUrl;
     final name = _author?.name ?? widget.authorName;
     final followerCount = _author?.followerCount ?? widget.followerCount;
-    final myUserId = context.read<MyPageProvider>().profile?.userId;
-    final isMe = _author != null && myUserId == _author!.userId;
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Row(
@@ -345,7 +398,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
             ],
           ),
           const Spacer(),
-          if (!isMe)
+          if (!_isMe)
             _following == null
                 ? const SizedBox(
                     width: 72,

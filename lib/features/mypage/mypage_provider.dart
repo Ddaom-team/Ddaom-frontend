@@ -40,9 +40,13 @@ class MyPageProvider extends ChangeNotifier {
     }
   }
 
-  void updateProfile({String? name, String? avatarUrl}) {
-    if (_profile == null) return;
-    _profile = _profile!.copyWith(name: name, avatarUrl: avatarUrl);
+  Future<void> updateNickname(String nickname) async {
+    final res = await _api.dio.patch(
+      '/api/users/me/nickname',
+      data: {'nickname': nickname},
+    );
+    final data = res.data as Map<String, dynamic>;
+    _profile = _profile?.copyWith(name: (data['nickname'] as String?) ?? nickname);
     notifyListeners();
   }
 
@@ -52,6 +56,7 @@ class MyPageProvider extends ChangeNotifier {
     });
     final res = await _api.dio.patch('/api/users/me/profile-image', data: formData);
     final data = res.data as Map<String, dynamic>;
-    updateProfile(avatarUrl: data['profileImage'] as String?);
+    _profile = _profile?.copyWith(avatarUrl: data['profileImage'] as String?);
+    notifyListeners();
   }
 }

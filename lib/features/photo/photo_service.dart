@@ -66,6 +66,10 @@ class PhotoService {
     return PhotoLikeResult.fromJson(res.data as Map<String, dynamic>);
   }
 
+  Future<void> deletePhoto(int photoId) async {
+    await _api.dio.delete('/api/photos/$photoId');
+  }
+
   Future<void> uploadPhoto({
     required String filePath,
     required PhotoUploadRequest request,

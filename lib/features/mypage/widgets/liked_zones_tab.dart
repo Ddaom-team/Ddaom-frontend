@@ -10,10 +10,10 @@ class LikedZonesTab extends StatefulWidget {
   const LikedZonesTab({super.key});
 
   @override
-  State<LikedZonesTab> createState() => _LikedZonesTabState();
+  State<LikedZonesTab> createState() => LikedZonesTabState();
 }
 
-class _LikedZonesTabState extends State<LikedZonesTab>
+class LikedZonesTabState extends State<LikedZonesTab>
     with AutomaticKeepAliveClientMixin {
   List<GridPhoto>? _photos;
   bool _loading = true;
@@ -27,6 +27,8 @@ class _LikedZonesTabState extends State<LikedZonesTab>
     super.initState();
     _load();
   }
+
+  Future<void> reload() => _load();
 
   Future<void> _load() async {
     setState(() {
