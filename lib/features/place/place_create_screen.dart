@@ -1,12 +1,10 @@
 import 'dart:async';
 
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/api_client.dart';
 import '../../core/app_theme.dart';
-import '../../core/naver_map_config.dart';
 
 class PlaceCreateScreen extends StatefulWidget {
   const PlaceCreateScreen({super.key});
@@ -41,6 +39,7 @@ class _PlaceCreateScreenState extends State<PlaceCreateScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (_) => _AddressSearchSheet(
+        api: context.read<ApiClient>(),
         onSelected: (address, lat, lng) {
           setState(() {
             _addressCtrl.text = address;
@@ -181,9 +180,10 @@ class _PlaceCreateScreenState extends State<PlaceCreateScreen> {
 // ── 주소 검색 바텀시트 ─────────────────────────────────────────────
 
 class _AddressSearchSheet extends StatefulWidget {
+  final ApiClient api;
   final void Function(String address, double lat, double lng) onSelected;
 
-  const _AddressSearchSheet({required this.onSelected});
+  const _AddressSearchSheet({required this.api, required this.onSelected});
 
   @override
   State<_AddressSearchSheet> createState() => _AddressSearchSheetState();
@@ -191,7 +191,6 @@ class _AddressSearchSheet extends StatefulWidget {
 
 class _AddressSearchSheetState extends State<_AddressSearchSheet> {
   final _ctrl = TextEditingController();
-  final _dio = Dio();
   Timer? _timer;
   List<_GeoResult> _results = [];
   bool _loading = false;
@@ -200,7 +199,6 @@ class _AddressSearchSheetState extends State<_AddressSearchSheet> {
   void dispose() {
     _ctrl.dispose();
     _timer?.cancel();
-    _dio.close();
     super.dispose();
   }
 
@@ -218,24 +216,12 @@ class _AddressSearchSheetState extends State<_AddressSearchSheet> {
     if (!mounted) return;
     setState(() => _loading = true);
     try {
-      final res = await _dio.get(
-        'https://maps.apigw.ntruss.com/map-geocode/v2/geocode',
+      final res = await widget.api.dio.get(
+        '/api/places/geocode',
         queryParameters: {'query': q},
-        options: Options(
-          headers: {
-            'x-ncp-apigw-api-key-id': naverMapClientId,
-            'x-ncp-apigw-api-key': naverGeoClientSecret,
-          },
-          validateStatus: (_) => true,
-        ),
       );
       if (!mounted) return;
-      if (res.statusCode != 200) {
-        debugPrint('[GeoSearch] HTTP ${res.statusCode}: ${res.data}');
-        setState(() => _results = []);
-        return;
-      }
-      final addresses = res.data['addresses'] as List<dynamic>? ?? [];
+      final addresses = res.data as List<dynamic>? ?? [];
       setState(() {
         _results = addresses.map((a) {
           final m = a as Map<String, dynamic>;

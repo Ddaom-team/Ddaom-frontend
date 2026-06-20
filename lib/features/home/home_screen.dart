@@ -29,24 +29,20 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final regionLabel = context.select<HomeProvider, String>(
-      (p) => p.selectedRegion.titleLabel,
-    );
-
     return Scaffold(
       appBar: AppBar(
         title: GestureDetector(
           onTap: () => _showRegionPicker(context),
           child: Row(
             mainAxisSize: MainAxisSize.min,
-            children: [
+            children: const [
               Text(
-                regionLabel,
-                style: const TextStyle(
+                '다른 지역을 탐색해볼까요?',
+                style: TextStyle(
                     fontSize: 17, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(width: 4),
-              const Icon(Icons.keyboard_arrow_down, size: 20),
+              SizedBox(width: 4),
+              Icon(Icons.keyboard_arrow_down, size: 20),
             ],
           ),
         ),

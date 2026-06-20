@@ -10,13 +10,6 @@ class Region {
   final double lng;
   const Region({required this.name, required this.lat, required this.lng});
 
-  String get titleLabel {
-    final code = name.codeUnits.last;
-    final hasJongseong =
-        (code >= 0xAC00 && code <= 0xD7A3) && (code - 0xAC00) % 28 != 0;
-    return '지금, $name${hasJongseong ? '은' : '는'}?';
-  }
-
   static const List<Region> presets = [
     Region(name: '성수동', lat: 37.5445, lng: 127.0556),
     Region(name: '홍대', lat: 37.5563, lng: 126.9239),
@@ -46,22 +39,12 @@ class HomeProvider extends ChangeNotifier {
     loadPlaces();
   }
 
-  Region _selectedRegion = Region.presets.first;
   PlaceCategory _selectedCategory = PlaceCategory.all;
   List<Place> _allPlaces = [];
   String? selectedPlaceId;
   NaverMapController? mapController;
   bool isLoading = false;
   String? error;
-
-  Region get selectedRegion => _selectedRegion;
-
-  void setRegion(Region region) {
-    if (_selectedRegion.name == region.name) return;
-    _selectedRegion = region;
-    notifyListeners();
-    loadPlaces();
-  }
 
   PlaceCategory get selectedCategory => _selectedCategory;
 
@@ -110,10 +93,12 @@ class HomeProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void moveToRegion(Region region) {
+  void moveToRegion(Region region) => moveToLatLng(region.lat, region.lng);
+
+  void moveToLatLng(double lat, double lng) {
     mapController?.updateCamera(
       NCameraUpdate.scrollAndZoomTo(
-        target: NLatLng(region.lat, region.lng),
+        target: NLatLng(lat, lng),
         zoom: 15,
       ),
     );
