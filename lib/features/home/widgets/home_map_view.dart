@@ -120,7 +120,7 @@ class _HomeMapViewState extends State<HomeMapView> {
     // 검색이 실패해도 이름+좌표만으로 카드를 띄워 등록할 수 있게 한다.
     List<NaverPlace> results = [];
     try {
-      results = await _searchService.search(symbol.caption);
+      results = await _searchService.search(symbol.caption, lat: lat, lng: lng);
     } catch (_) {}
     final match = _nearestMatch(results, lat, lng);
     final place = NaverPlace(
@@ -137,6 +137,7 @@ class _HomeMapViewState extends State<HomeMapView> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),

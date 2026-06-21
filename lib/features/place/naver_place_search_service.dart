@@ -101,12 +101,14 @@ class NaverPlaceSearchService {
   final ApiClient _api;
   NaverPlaceSearchService(this._api);
 
-  Future<List<NaverPlace>> search(String query) async {
+  Future<List<NaverPlace>> search(String query,
+      {double? lat, double? lng}) async {
     try {
-      final res = await _api.dio.get(
-        '/api/places/search',
-        queryParameters: {'query': query, 'display': 5},
-      );
+      final params = <String, dynamic>{'query': query, 'display': 5};
+      if (lat != null && lng != null) {
+        params['coordinate'] = '${lng.toStringAsFixed(7)},${lat.toStringAsFixed(7)}';
+      }
+      final res = await _api.dio.get('/api/places/search', queryParameters: params);
       final items = res.data as List<dynamic>? ?? [];
       return items
           .map((e) => NaverPlace.fromJson(e as Map<String, dynamic>))
