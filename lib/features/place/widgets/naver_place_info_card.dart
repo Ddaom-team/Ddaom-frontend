@@ -67,8 +67,11 @@ class _NaverPlaceInfoCardState extends State<NaverPlaceInfoCard> {
   @override
   Widget build(BuildContext context) {
     final place = widget.place;
+    final mq = MediaQuery.of(context);
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: mq.viewInsets.bottom + mq.padding.bottom,
+      ),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
