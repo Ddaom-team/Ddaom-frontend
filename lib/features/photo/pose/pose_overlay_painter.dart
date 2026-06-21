@@ -9,10 +9,17 @@ class PoseOverlayPainter extends CustomPainter {
   const PoseOverlayPainter({
     required this.reference,
     required this.current,
+    this.displaySize,
   });
 
   final PoseSnapshot? reference;
   final PoseSnapshot? current;
+
+  /// 카메라 프리뷰가 화면에 cover되는 기준 크기(세로 방향).
+  /// reference(원본 사진)와 current(카메라)는 각자 imageSize가 달라
+  /// 같은 정규화 좌표라도 화면상 위치·크기가 어긋난다. 둘 다 이 크기로
+  /// 매핑해 카메라 프리뷰와 동일한 좌표계에 정렬한다.
+  final Size? displaySize;
 
   static const _connections = <(PoseLandmarkType, PoseLandmarkType)>[
     (PoseLandmarkType.leftShoulder, PoseLandmarkType.rightShoulder),
@@ -64,27 +71,32 @@ class PoseOverlayPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
 
+    // reference·current를 같은 좌표계에 겹치기 위해 카메라 프리뷰 기준으로 매핑.
+    final source = displaySize ?? snapshot.imageSize;
+
     for (final connection in _connections) {
       final start = snapshot.points[connection.$1];
       final end = snapshot.points[connection.$2];
       if (start == null ||
           end == null ||
+          !start.inFrame ||
+          !end.inFrame ||
           start.likelihood < 0.45 ||
           end.likelihood < 0.45) {
         continue;
       }
       canvas.drawLine(
-        _toCanvas(start.position, snapshot.imageSize, canvasSize),
-        _toCanvas(end.position, snapshot.imageSize, canvasSize),
+        _toCanvas(start.position, source, canvasSize),
+        _toCanvas(end.position, source, canvasSize),
         paint,
       );
     }
 
     paint.style = PaintingStyle.fill;
     for (final point in snapshot.points.values) {
-      if (point.likelihood < 0.45) continue;
+      if (!point.inFrame || point.likelihood < 0.45) continue;
       canvas.drawCircle(
-        _toCanvas(point.position, snapshot.imageSize, canvasSize),
+        _toCanvas(point.position, source, canvasSize),
         math.max(2.5, strokeWidth),
         paint,
       );
@@ -108,6 +120,8 @@ class PoseOverlayPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant PoseOverlayPainter oldDelegate) {
-    return oldDelegate.reference != reference || oldDelegate.current != current;
+    return oldDelegate.reference != reference ||
+        oldDelegate.current != current ||
+        oldDelegate.displaySize != displaySize;
   }
 }

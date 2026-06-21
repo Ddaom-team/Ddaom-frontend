@@ -58,6 +58,10 @@ class _PhotoSelectionScreenState extends State<PhotoSelectionScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: const Text('사진 선택',
             style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
         centerTitle: true,

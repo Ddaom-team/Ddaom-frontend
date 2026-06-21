@@ -53,14 +53,41 @@ class _CameraScreenState extends State<CameraScreen> {
   // 찍은 사진이 있으면 선택 화면으로, 없으면 그냥 카메라를 닫는다.
   Future<void> _onExit() async {
     if (_captured.isEmpty) {
-      if (widget.onBack != null) {
-        widget.onBack!();
-      } else {
-        Navigator.maybePop(context);
-      }
+      _leave();
       return;
     }
-    await _openSelection();
+    final action = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('업로드 하시겠습니까?'),
+        content: const Text('촬영한 사진을 업로드할까요?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, 'leave'),
+            child: const Text('나가기'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, 'upload'),
+            child: const Text('올리기'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    if (action == 'upload') {
+      await _openSelection();
+    } else if (action == 'leave') {
+      _leave();
+    }
+  }
+
+  // 업로드 없이 카메라를 닫는다(이전 화면으로).
+  void _leave() {
+    if (widget.onBack != null) {
+      widget.onBack!();
+    } else {
+      Navigator.maybePop(context);
+    }
   }
 
   Future<void> _openSelection() async {

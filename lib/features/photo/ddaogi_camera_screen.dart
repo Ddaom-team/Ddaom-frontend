@@ -156,20 +156,30 @@ class _DdaogiCameraScreenState extends State<DdaogiCameraScreen> {
       );
       client.close(force: true);
 
-      final file = File(
-        '${Directory.systemTemp.path}${Platform.pathSeparator}'
-        'ddaom_reference_${DateTime.now().microsecondsSinceEpoch}.jpg',
-      );
-      await file.writeAsBytes(bytes, flush: true);
-
+      // iOS의 MLKit fromFilePath는 EXIF 회전을 적용하지 않아 landmark를 raw
+      // (회전 전·가로) 좌표로 반환한다. 반면 imageSize는 Flutter 코덱이 EXIF를
+      // 적용한 세로 dims라 가로·세로가 어긋나 흰색 가이드가 모서리에 뭉친다.
+      // → 코덱이 똑바로 세운 픽셀을 PNG로 다시 써서 MLKit에 주면, MLKit 좌표계가
+      //   imageSize와 일치해 EXIF 회전과 무관하게 양 플랫폼 모두 정렬된다.
       final codec = await ui.instantiateImageCodec(Uint8List.fromList(bytes));
       final frame = await codec.getNextFrame();
       final imageSize = Size(
         frame.image.width.toDouble(),
         frame.image.height.toDouble(),
       );
+      final pngData =
+          await frame.image.toByteData(format: ui.ImageByteFormat.png);
       frame.image.dispose();
       codec.dispose();
+      if (pngData == null) {
+        throw const FormatException('참조 이미지 디코딩 실패');
+      }
+
+      final file = File(
+        '${Directory.systemTemp.path}${Platform.pathSeparator}'
+        'ddaom_reference_${DateTime.now().microsecondsSinceEpoch}.png',
+      );
+      await file.writeAsBytes(pngData.buffer.asUint8List(), flush: true);
 
       final poses = await _referenceDetector.processImage(
         InputImage.fromFilePath(file.path),
@@ -209,13 +219,36 @@ class _DdaogiCameraScreenState extends State<DdaogiCameraScreen> {
     }
   }
 
-  // 찍은 사진이 있으면 선택 화면으로, 없으면 그냥 카메라를 닫는다.
+  // 찍은 사진이 없으면 그냥 카메라를 닫는다. 찍은 사진이 있으면 업로드
+  // 여부를 물어 올리기=선택 화면 / 나가기=업로드 없이 이전 화면으로 돌아간다.
   Future<void> _onExit() async {
     if (_captured.isEmpty) {
       Navigator.maybePop(context);
       return;
     }
-    await _openSelection();
+    final action = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('업로드 하시겠습니까?'),
+        content: const Text('촬영한 사진을 업로드할까요?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, 'leave'),
+            child: const Text('나가기'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, 'upload'),
+            child: const Text('올리기'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    if (action == 'upload') {
+      await _openSelection();
+    } else if (action == 'leave') {
+      Navigator.maybePop(context);
+    }
   }
 
   Future<void> _openSelection() async {
@@ -411,6 +444,8 @@ class _DdaogiCameraScreenState extends State<DdaogiCameraScreen> {
         rotation: metadata.rotation,
         lensDirection: camera.lensDirection,
       );
+      // 프레임 간 떨림을 줄이기 위해 직전 포즈와 지수이동평균으로 섞는다.
+      final smoothed = _smoothPose(_currentPose, snapshot);
       final reference = _referencePose;
       final result = reference == null
           ? const PoseGuideResult(
@@ -421,12 +456,12 @@ class _DdaogiCameraScreenState extends State<DdaogiCameraScreen> {
             )
           : _poseMatcher.compare(
               reference,
-              snapshot,
+              smoothed,
               upperBodyOnly: _isUpperBodyGuide,
             );
 
       setState(() {
-        _currentPose = snapshot;
+        _currentPose = smoothed;
         _guideResult = result;
       });
     } catch (e) {
@@ -434,6 +469,30 @@ class _DdaogiCameraScreenState extends State<DdaogiCameraScreen> {
     } finally {
       _isProcessingFrame = false;
     }
+  }
+
+  // 라이브 포즈가 프레임마다 떨리는 것을 줄이기 위해 직전 포즈와 지수이동평균
+  // (EMA)으로 위치를 섞는다. alpha가 클수록 반응이 빠르지만 떨림도 커진다.
+  PoseSnapshot _smoothPose(PoseSnapshot? prev, PoseSnapshot next) {
+    if (prev == null) return next;
+    const alpha = 0.3;
+    final blended = <PoseLandmarkType, PosePoint>{};
+    next.points.forEach((type, p) {
+      final old = prev.points[type];
+      if (old == null) {
+        blended[type] = p;
+      } else {
+        blended[type] = PosePoint(
+          position: Offset(
+            old.position.dx + (p.position.dx - old.position.dx) * alpha,
+            old.position.dy + (p.position.dy - old.position.dy) * alpha,
+          ),
+          likelihood: p.likelihood,
+          inFrame: p.inFrame,
+        );
+      }
+    });
+    return PoseSnapshot(points: blended, imageSize: next.imageSize);
   }
 
   InputImage? _inputImageFromCameraImage(
@@ -586,6 +645,15 @@ class _DdaogiCameraScreenState extends State<DdaogiCameraScreen> {
         });
       }
     }
+  }
+
+  // 카메라 프리뷰가 cover되는 기준 크기(세로 방향). 포즈 오버레이를
+  // 프리뷰와 같은 좌표계로 정렬하기 위해 _buildCameraPreview의 SizedBox와
+  // 동일하게 previewSize를 swap한다.
+  Size? _previewDisplaySize() {
+    final previewSize = _controller?.value.previewSize;
+    if (previewSize == null) return null;
+    return Size(previewSize.height, previewSize.width);
   }
 
   Widget _buildCameraPreview() {
@@ -1065,6 +1133,7 @@ class _DdaogiCameraScreenState extends State<DdaogiCameraScreen> {
                           painter: PoseOverlayPainter(
                             reference: _referencePose,
                             current: _currentPose,
+                            displaySize: _previewDisplaySize(),
                           ),
                         ),
                       ),
