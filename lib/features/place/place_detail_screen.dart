@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/api_client.dart';
 import '../../core/app_theme.dart';
 import '../../core/network_thumb.dart';
-import '../photo/ddaogi_camera_screen.dart';
+import '../../screens/camera_screen.dart';
 import 'place_models.dart';
 import 'place_provider.dart';
 import 'widgets/info_tab.dart';
@@ -28,7 +28,7 @@ class _PlaceDetailView extends StatelessWidget {
   const _PlaceDetailView();
 
   // "이렇게 찍어요": 이 장소의 포토존 중 하나를 고른 뒤 그 포토존을 지정해
-  // 가이드 카메라(촬영→선택→메타데이터→등록)로 진입한다.
+  // 내맘대로 카메라로 진입한다.
   void _startDdaoggi(BuildContext context, List<PhotoZone> zones) {
     if (zones.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -81,10 +81,7 @@ class _PlaceDetailView extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => DdaogiCameraScreen(
-                            photoZone: zone,
-                            referencePhotoUrl: zone.imageUrl,
-                          ),
+                          builder: (_) => CameraScreen(photoZone: zone),
                         ),
                       );
                     },
