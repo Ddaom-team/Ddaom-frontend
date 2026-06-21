@@ -27,6 +27,36 @@ class PlaceDetailScreen extends StatelessWidget {
 class _PlaceDetailView extends StatelessWidget {
   const _PlaceDetailView();
 
+  Future<void> _deletePlace(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('장소 삭제'),
+        content: const Text('이 장소를 삭제하시겠습니까?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('삭제', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !context.mounted) return;
+    final success = await context.read<PlaceProvider>().deletePlace();
+    if (!context.mounted) return;
+    if (success) {
+      Navigator.pop(context);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('장소 삭제에 실패했습니다.')),
+      );
+    }
+  }
+
   // "이렇게 찍어요": 이 장소의 포토존 중 하나를 고른 뒤 그 포토존을 지정해
   // 내맘대로 카메라로 진입한다.
   void _startDdaoggi(BuildContext context, List<PhotoZone> zones) {
@@ -186,15 +216,25 @@ class _PlaceDetailView extends StatelessWidget {
         bottomNavigationBar: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: ElevatedButton(
-              onPressed: () => _startDdaoggi(context, detail.photoZones),
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size.fromHeight(48),
-                backgroundColor: AppColors.primaryPink,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('이렇게 찍어요'),
-            ),
+            child: detail.photoZones.isEmpty
+                ? ElevatedButton(
+                    onPressed: () => _deletePlace(context),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('장소 삭제'),
+                  )
+                : ElevatedButton(
+                    onPressed: () => _startDdaoggi(context, detail.photoZones),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                      backgroundColor: AppColors.primaryPink,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('이렇게 찍어요'),
+                  ),
           ),
         ),
       ),

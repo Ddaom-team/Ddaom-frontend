@@ -40,6 +40,15 @@ class PlaceProvider extends ChangeNotifier {
   /// 등록 등으로 데이터가 바뀐 뒤 상세를 다시 불러온다.
   Future<void> reload() => _load();
 
+  Future<bool> deletePlace() async {
+    try {
+      await _api.dio.delete('/api/places/$placeId');
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<void> toggleSave() async {
     final prev = _isSaved;
     _isSaved = !_isSaved;
