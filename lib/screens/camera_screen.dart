@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:gal/gal.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../features/photo/photo_selection_screen.dart';
 import '../features/place/place_models.dart';
@@ -218,6 +219,17 @@ class _CameraScreenState extends State<CameraScreen> {
     } catch (_) {}
   }
 
+  Future<void> _pickFromGallery() async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(source: ImageSource.gallery);
+    if (image == null || !mounted) return;
+
+    setState(() {
+      _lastPhoto = image;
+      _captured.add(image);
+    });
+  }
+
   Future<void> _takePicture() async {
     if (_controller == null ||
         !_controller!.value.isInitialized ||
@@ -385,7 +397,7 @@ class _CameraScreenState extends State<CameraScreen> {
 
   Widget _albumPreview() {
     return GestureDetector(
-      onTap: _captured.isEmpty ? null : _openSelection,
+      onTap: _captured.isEmpty ? _pickFromGallery : _openSelection,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
