@@ -113,7 +113,12 @@ class _PlaceDetailView extends StatelessWidget {
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        body: NestedScrollView(
+        body: RefreshIndicator(
+          color: AppColors.primaryPink,
+          // NestedScrollView 내 탭 스크롤 알림은 depth 2로 올라온다.
+          notificationPredicate: (n) => n.depth == 2,
+          onRefresh: () => context.read<PlaceProvider>().reload(),
+          child: NestedScrollView(
           headerSliverBuilder: (context, _) => [
             SliverAppBar(
               expandedHeight: 260,
@@ -176,6 +181,7 @@ class _PlaceDetailView extends StatelessWidget {
           body: const TabBarView(
             children: [PhotozoneTab(), InfoTab(), ReviewTab()],
           ),
+        ),
         ),
         bottomNavigationBar: SafeArea(
           child: Padding(
