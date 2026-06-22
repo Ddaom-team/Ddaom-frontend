@@ -11,11 +11,13 @@ import 'photo_service.dart';
 class PhotoMetadataScreen extends StatefulWidget {
   final List<String> filePaths;
   final String? photoSpotId;
+  final int? sourcePhotoId;
 
   const PhotoMetadataScreen({
     super.key,
     required this.filePaths,
     this.photoSpotId,
+    this.sourcePhotoId,
   });
 
   @override
@@ -48,7 +50,10 @@ class _PhotoMetadataScreenState extends State<PhotoMetadataScreen> {
     final service = PhotoService(context.read<ApiClient>());
     final request = PhotoUploadRequest(
       photoSpotId: widget.photoSpotId,
-      tip: _tipController.text.trim().isEmpty ? null : _tipController.text.trim(),
+      sourcePhotoId: widget.sourcePhotoId,
+      tip: _tipController.text.trim().isEmpty
+          ? null
+          : _tipController.text.trim(),
       mood: _mood,
       timeTag: _timeTag,
       photoType: _photoType,
@@ -180,17 +185,16 @@ class _PhotoMetadataScreenState extends State<PhotoMetadataScreen> {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            Image.file(
-              File(widget.filePaths.first),
-              fit: BoxFit.cover,
-            ),
+            Image.file(File(widget.filePaths.first), fit: BoxFit.cover),
             if (widget.filePaths.length > 1)
               Positioned(
                 top: 10,
                 right: 10,
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.6),
                     borderRadius: BorderRadius.circular(20),
@@ -198,8 +202,11 @@ class _PhotoMetadataScreenState extends State<PhotoMetadataScreen> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.collections,
-                          color: Colors.white, size: 15),
+                      const Icon(
+                        Icons.collections,
+                        color: Colors.white,
+                        size: 15,
+                      ),
                       const SizedBox(width: 5),
                       Text(
                         '${widget.filePaths.length}장',
@@ -231,10 +238,16 @@ class _PhotoMetadataScreenState extends State<PhotoMetadataScreen> {
           maxLength: 100,
           decoration: InputDecoration(
             hintText: '이 포토존에서의 촬영 팁을 남겨보세요',
-            hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+            hintStyle: const TextStyle(
+              color: AppColors.textMuted,
+              fontSize: 14,
+            ),
             filled: true,
             fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 12,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: AppColors.divider),
@@ -297,19 +310,17 @@ class _PhotoMetadataScreenState extends State<PhotoMetadataScreen> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: chips
-                  .map((c) => Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: c,
-                      ))
+                  .map(
+                    (c) => Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: c,
+                    ),
+                  )
                   .toList(),
             ),
           )
         else
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: chips,
-          ),
+          Wrap(spacing: 8, runSpacing: 8, children: chips),
       ],
     );
   }

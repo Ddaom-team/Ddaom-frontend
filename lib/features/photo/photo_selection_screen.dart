@@ -13,11 +13,13 @@ import 'photo_spot_picker_screen.dart';
 class PhotoSelectionScreen extends StatefulWidget {
   final List<String> filePaths;
   final PhotoZone? photoZone;
+  final int? sourcePhotoId;
 
   const PhotoSelectionScreen({
     super.key,
     required this.filePaths,
     this.photoZone,
+    this.sourcePhotoId,
   });
 
   @override
@@ -43,8 +45,12 @@ class _PhotoSelectionScreenState extends State<PhotoSelectionScreen> {
             ? PhotoMetadataScreen(
                 filePaths: paths,
                 photoSpotId: widget.photoZone!.id,
+                sourcePhotoId: widget.sourcePhotoId,
               )
-            : PhotoSpotPickerScreen(filePaths: paths),
+            : PhotoSpotPickerScreen(
+                filePaths: paths,
+                sourcePhotoId: widget.sourcePhotoId,
+              ),
       ),
     );
     // 업로드 완료면 카메라까지 전파해 누적 사진을 비우게 한다.
@@ -75,15 +81,16 @@ class _PhotoSelectionScreenState extends State<PhotoSelectionScreen> {
               child: Text(
                 '업로드할 사진을 선택하세요 (${_selected.length}/${widget.filePaths.length})',
                 style: const TextStyle(
-                    fontSize: 13, color: AppColors.textMuted),
+                  fontSize: 13,
+                  color: AppColors.textMuted,
+                ),
               ),
             ),
           ),
           Expanded(
             child: GridView.builder(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              gridDelegate:
-                  const SliverGridDelegateWithFixedCrossAxisCount(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 3,
                 crossAxisSpacing: 8,
                 mainAxisSpacing: 8,

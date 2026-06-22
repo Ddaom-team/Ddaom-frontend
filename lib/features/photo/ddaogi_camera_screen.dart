@@ -20,12 +20,14 @@ import '../place/place_models.dart';
 class DdaogiCameraScreen extends StatefulWidget {
   final PhotoZone? photoZone;
   final String? referencePhotoUrl;
+  final int? sourcePhotoId;
   final PhotoType? photoType;
 
   const DdaogiCameraScreen({
     super.key,
     this.photoZone,
     this.referencePhotoUrl,
+    this.sourcePhotoId,
     this.photoType,
   });
 
@@ -258,6 +260,7 @@ class _DdaogiCameraScreenState extends State<DdaogiCameraScreen> {
         builder: (_) => PhotoSelectionScreen(
           filePaths: _captured.map((e) => e.path).toList(),
           photoZone: widget.photoZone,
+          sourcePhotoId: widget.sourcePhotoId,
         ),
       ),
     );
@@ -564,7 +567,9 @@ class _DdaogiCameraScreenState extends State<DdaogiCameraScreen> {
           await _controller!.setZoomLevel(zoom);
           if (mounted) setState(() => _currentZoom = zoom);
         } catch (_) {}
-      } else if (allowCameraSwitch && _ultraWideCamera != null && !_isUltraWide) {
+      } else if (allowCameraSwitch &&
+          _ultraWideCamera != null &&
+          !_isUltraWide) {
         _isUltraWide = true;
         await _startCamera(_ultraWideCamera!);
       }
@@ -687,10 +692,7 @@ class _DdaogiCameraScreenState extends State<DdaogiCameraScreen> {
       padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
       child: Row(
         children: [
-          _circleIconButton(
-            icon: Icons.arrow_back_ios_new,
-            onTap: _onExit,
-          ),
+          _circleIconButton(icon: Icons.arrow_back_ios_new, onTap: _onExit),
           const Spacer(),
           const Text(
             '가이드 카메라',
@@ -701,10 +703,7 @@ class _DdaogiCameraScreenState extends State<DdaogiCameraScreen> {
             ),
           ),
           const Spacer(),
-          _circleIconButton(
-            icon: Icons.cameraswitch,
-            onTap: _switchCamera,
-          ),
+          _circleIconButton(icon: Icons.cameraswitch, onTap: _switchCamera),
         ],
       ),
     );
@@ -795,9 +794,7 @@ class _DdaogiCameraScreenState extends State<DdaogiCameraScreen> {
 
     final expanded = _isReferencePreviewExpanded;
     return GestureDetector(
-      onTap: () => setState(
-        () => _isReferencePreviewExpanded = !expanded,
-      ),
+      onTap: () => setState(() => _isReferencePreviewExpanded = !expanded),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOut,
@@ -919,8 +916,8 @@ class _DdaogiCameraScreenState extends State<DdaogiCameraScreen> {
         final label = level == 1.0
             ? '×1'
             : level < 1.0
-                ? '×$level'
-                : '×${level.toInt()}';
+            ? '×$level'
+            : '×${level.toInt()}';
         return GestureDetector(
           onTap: () => _setZoom(level, allowCameraSwitch: true),
           child: Container(
@@ -992,10 +989,7 @@ class _DdaogiCameraScreenState extends State<DdaogiCameraScreen> {
             clipBehavior: Clip.antiAlias,
             child: _lastPhoto == null
                 ? const Icon(Icons.photo_library_outlined, color: Colors.white)
-                : Image.file(
-                    File(_lastPhoto!.path),
-                    fit: BoxFit.cover,
-                  ),
+                : Image.file(File(_lastPhoto!.path), fit: BoxFit.cover),
           ),
           if (_captured.isNotEmpty)
             Positioned(
@@ -1099,9 +1093,7 @@ class _DdaogiCameraScreenState extends State<DdaogiCameraScreen> {
     unawaited(_liveDetector.close());
     final referenceFile = _referenceFile;
     if (referenceFile != null) {
-      unawaited(
-        referenceFile.delete().then<void>((_) {}).catchError((_) {}),
-      );
+      unawaited(referenceFile.delete().then<void>((_) {}).catchError((_) {}));
     }
     _controller?.dispose();
     super.dispose();
@@ -1170,4 +1162,3 @@ class _DdaogiCameraScreenState extends State<DdaogiCameraScreen> {
     );
   }
 }
-

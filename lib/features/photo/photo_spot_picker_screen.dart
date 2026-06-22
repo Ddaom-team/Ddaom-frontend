@@ -15,7 +15,13 @@ import 'photo_metadata_screen.dart';
 /// 사용자가 직접 다른 장소·포토존을 선택할 수도 있다. 건너뛰기도 가능.
 class PhotoSpotPickerScreen extends StatefulWidget {
   final List<String> filePaths;
-  const PhotoSpotPickerScreen({super.key, required this.filePaths});
+  final int? sourcePhotoId;
+
+  const PhotoSpotPickerScreen({
+    super.key,
+    required this.filePaths,
+    this.sourcePhotoId,
+  });
 
   @override
   State<PhotoSpotPickerScreen> createState() => _PhotoSpotPickerScreenState();
@@ -66,7 +72,9 @@ class _PhotoSpotPickerScreenState extends State<PhotoSpotPickerScreen> {
         return;
       }
       _pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
       );
     } catch (_) {
       // 위치 못 받으면 거리 정렬 없이 등록 순서 그대로 노출.
@@ -82,7 +90,11 @@ class _PhotoSpotPickerScreenState extends State<PhotoSpotPickerScreen> {
     final pos = _pos;
     if (pos == null) return double.maxFinite;
     return Geolocator.distanceBetween(
-        pos.latitude, pos.longitude, p.lat, p.lng);
+      pos.latitude,
+      pos.longitude,
+      p.lat,
+      p.lng,
+    );
   }
 
   String _distanceLabel(Place p) {
@@ -107,7 +119,9 @@ class _PhotoSpotPickerScreenState extends State<PhotoSpotPickerScreen> {
     }
     setState(() => _loadingSpots.add(placeId));
     try {
-      final res = await context.read<ApiClient>().dio.get('/api/places/$placeId');
+      final res = await context.read<ApiClient>().dio.get(
+        '/api/places/$placeId',
+      );
       final detail = PlaceDetail.fromJson(res.data as Map<String, dynamic>);
       _spotsCache[placeId] = detail.photoZones;
     } catch (_) {
@@ -124,6 +138,7 @@ class _PhotoSpotPickerScreenState extends State<PhotoSpotPickerScreen> {
         builder: (_) => PhotoMetadataScreen(
           filePaths: widget.filePaths,
           photoSpotId: photoSpotId,
+          sourcePhotoId: widget.sourcePhotoId,
         ),
       ),
     );
@@ -138,14 +153,18 @@ class _PhotoSpotPickerScreenState extends State<PhotoSpotPickerScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
-        title: const Text('포토존 선택',
-            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+        title: const Text(
+          '포토존 선택',
+          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+        ),
         centerTitle: true,
         actions: [
           TextButton(
             onPressed: () => _select(null),
-            child: const Text('건너뛰기',
-                style: TextStyle(color: AppColors.textMuted)),
+            child: const Text(
+              '건너뛰기',
+              style: TextStyle(color: AppColors.textMuted),
+            ),
           ),
         ],
       ),
@@ -186,8 +205,10 @@ class _PhotoSpotPickerScreenState extends State<PhotoSpotPickerScreen> {
     final list = _filtered;
     if (list.isEmpty) {
       return const Center(
-        child: Text('등록된 장소가 없습니다',
-            style: TextStyle(color: AppColors.textMuted)),
+        child: Text(
+          '등록된 장소가 없습니다',
+          style: TextStyle(color: AppColors.textMuted),
+        ),
       );
     }
     // 검색 중이 아니고 포토존 보유 장소가 있으면 가장 가까운 곳을 추천 처리.
@@ -219,30 +240,36 @@ class _PhotoSpotPickerScreenState extends State<PhotoSpotPickerScreen> {
         title: Row(
           children: [
             Flexible(
-              child: Text(place.name,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w600)),
+              child: Text(
+                place.name,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
             if (recommended) ...[
               const SizedBox(width: 8),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
                   color: AppColors.primaryPink,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Text('추천',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700)),
+                child: const Text(
+                  '추천',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
             ],
           ],
         ),
-        subtitle: Text(subtitle,
-            style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+        subtitle: Text(
+          subtitle,
+          style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+        ),
         children: hasSpots
             ? _spotChildren(place.id)
             : const [
@@ -250,9 +277,13 @@ class _PhotoSpotPickerScreenState extends State<PhotoSpotPickerScreen> {
                   padding: EdgeInsets.fromLTRB(20, 0, 20, 12),
                   child: Align(
                     alignment: Alignment.centerLeft,
-                    child: Text('등록된 포토존이 없습니다',
-                        style:
-                            TextStyle(fontSize: 13, color: AppColors.textMuted)),
+                    child: Text(
+                      '등록된 포토존이 없습니다',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -270,7 +301,9 @@ class _PhotoSpotPickerScreenState extends State<PhotoSpotPickerScreen> {
               width: 22,
               height: 22,
               child: CircularProgressIndicator(
-                  strokeWidth: 2.5, color: AppColors.primaryPink),
+                strokeWidth: 2.5,
+                color: AppColors.primaryPink,
+              ),
             ),
           ),
         ),
@@ -284,29 +317,36 @@ class _PhotoSpotPickerScreenState extends State<PhotoSpotPickerScreen> {
           padding: EdgeInsets.fromLTRB(20, 0, 20, 12),
           child: Align(
             alignment: Alignment.centerLeft,
-            child: Text('등록된 포토존이 없습니다',
-                style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
+            child: Text(
+              '등록된 포토존이 없습니다',
+              style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+            ),
           ),
         ),
       ];
     }
     return spots
-        .map((z) => ListTile(
-              contentPadding: const EdgeInsets.only(left: 32, right: 20),
-              leading: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: NetworkThumb(
-                  url: z.imageUrl,
-                  width: 44,
-                  height: 44,
-                  placeholderIcon: Icons.photo_camera_outlined,
-                ),
+        .map(
+          (z) => ListTile(
+            contentPadding: const EdgeInsets.only(left: 32, right: 20),
+            leading: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: NetworkThumb(
+                url: z.imageUrl,
+                width: 44,
+                height: 44,
+                placeholderIcon: Icons.photo_camera_outlined,
               ),
-              title: Text(z.name, style: const TextStyle(fontSize: 14)),
-              trailing: const Icon(Icons.chevron_right,
-                  size: 20, color: AppColors.textMuted),
-              onTap: () => _select(z.id),
-            ))
+            ),
+            title: Text(z.name, style: const TextStyle(fontSize: 14)),
+            trailing: const Icon(
+              Icons.chevron_right,
+              size: 20,
+              color: AppColors.textMuted,
+            ),
+            onTap: () => _select(z.id),
+          ),
+        )
         .toList();
   }
 }

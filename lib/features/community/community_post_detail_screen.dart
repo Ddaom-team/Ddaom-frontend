@@ -30,7 +30,8 @@ class CommunityPostDetailScreen extends StatefulWidget {
   });
 
   @override
-  State<CommunityPostDetailScreen> createState() => _CommunityPostDetailScreenState();
+  State<CommunityPostDetailScreen> createState() =>
+      _CommunityPostDetailScreenState();
 }
 
 class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
@@ -124,9 +125,9 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('삭제에 실패했습니다. 다시 시도해주세요.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('삭제에 실패했습니다. 다시 시도해주세요.')));
         setState(() => _deletePending = false);
       }
     }
@@ -232,16 +233,21 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
                         color: AppColors.textMuted,
                       ),
                     )
-                  : const Icon(Icons.delete_outline, color: AppColors.textMuted),
+                  : const Icon(
+                      Icons.delete_outline,
+                      color: AppColors.textMuted,
+                    ),
               onPressed: _deletePending ? null : _deletePhoto,
             ),
         ],
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primaryPink))
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.primaryPink),
+            )
           : _error != null
-              ? _buildError()
-              : _buildContent(),
+          ? _buildError()
+          : _buildContent(),
     );
   }
 
@@ -250,11 +256,16 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(_error!, style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
+          Text(
+            _error!,
+            style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+          ),
           const SizedBox(height: 12),
           ElevatedButton(
             onPressed: _load,
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryPink),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryPink,
+            ),
             child: const Text('다시 시도', style: TextStyle(color: Colors.white)),
           ),
         ],
@@ -321,7 +332,9 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
                 children: [
                   Icon(
                     _liked ? Icons.favorite : Icons.favorite_border,
-                    color: _liked ? const Color(0xFFFF6B9D) : AppColors.textMuted,
+                    color: _liked
+                        ? const Color(0xFFFF6B9D)
+                        : AppColors.textMuted,
                     size: 26,
                   ),
                   const SizedBox(width: 6),
@@ -335,6 +348,21 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
                   ),
                 ],
               ),
+            ),
+          ),
+          const SizedBox(width: 20),
+          const Icon(
+            Icons.control_point_duplicate_outlined,
+            color: AppColors.textMuted,
+            size: 24,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            '따오기 ${_photo?.ddaomCount ?? 0}',
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textMain,
             ),
           ),
         ],
@@ -383,7 +411,10 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
               if (followerCount != null)
                 Text(
                   '팔로워 ${_formatCount(followerCount)}명',
-                  style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textMuted,
+                  ),
                 )
               else
                 Container(
@@ -425,16 +456,22 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
                           : Colors.white,
                       disabledBackgroundColor: AppColors.illustrationBox,
                       disabledForegroundColor: AppColors.textMuted,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 6,
+                      ),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20)),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
                       minimumSize: Size.zero,
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                     child: Text(
                       _following! ? '팔로잉' : '팔로우',
                       style: const TextStyle(
-                          fontSize: 13, fontWeight: FontWeight.w600),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
         ],
@@ -450,16 +487,28 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
         children: [
           const Text(
             '촬영 장소',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textMuted),
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textMuted,
+            ),
           ),
           const SizedBox(height: 8),
           Row(
             children: [
-              const Icon(Icons.location_on, size: 16, color: AppColors.primaryPink),
+              const Icon(
+                Icons.location_on,
+                size: 16,
+                color: AppColors.primaryPink,
+              ),
               const SizedBox(width: 4),
               Text(
                 location,
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textMain),
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textMain,
+                ),
               ),
             ],
           ),
@@ -467,7 +516,10 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
             const SizedBox(height: 6),
             Text(
               widget.hashtags.map((t) => '#$t').join('  '),
-              style: const TextStyle(fontSize: 13, color: AppColors.primaryPink),
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.primaryPink,
+              ),
             ),
           ],
         ],
@@ -483,12 +535,20 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
         children: [
           const Text(
             '촬영 팁',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textMuted),
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textMuted,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             tip,
-            style: const TextStyle(fontSize: 14, color: AppColors.textMain, height: 1.5),
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.textMain,
+              height: 1.5,
+            ),
           ),
         ],
       ),
@@ -510,7 +570,11 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
         children: [
           const Text(
             '사진 정보',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textMuted),
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textMuted,
+            ),
           ),
           const SizedBox(height: 12),
           Wrap(
@@ -518,7 +582,10 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
             runSpacing: 8,
             children: categories.map((entry) {
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 7,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.illustrationBox,
                   borderRadius: BorderRadius.circular(20),
@@ -528,7 +595,10 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
                     children: [
                       TextSpan(
                         text: '${entry.$1}  ',
-                        style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textMuted,
+                        ),
                       ),
                       TextSpan(
                         text: entry.$2,
@@ -562,27 +632,37 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
           width: double.infinity,
           height: 52,
           child: ElevatedButton(
-            onPressed: () {
-              Navigator.push(
+            onPressed: () async {
+              await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (_) => DdaogiCameraScreen(
                     referencePhotoUrl: _photo != null
                         ? _resolveImageUrl(_photo!.photoUrl)
                         : null,
+                    sourcePhotoId: _photo?.photoId,
                     photoType: _photo?.photoType,
                   ),
                 ),
               );
+              if (mounted) {
+                await _load();
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryPink,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
               elevation: 0,
             ),
             child: const Text(
               '따오기',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white),
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
             ),
           ),
         ),
