@@ -6,11 +6,31 @@ import 'package:ddaom_frontend/features/home/home_models.dart';
 class _FakeRepo implements PlaceRepository {
   @override
   Future<List<Place>> fetchPlaces() async => Place.mockList();
+
+  @override
+  Future<List<Place>> fetchPopularPlaces({
+    PlaceCategory? category,
+    int limit = 12,
+  }) async {
+    final places = Place.mockList().reversed.where(
+          (place) =>
+              category == null ||
+              category == PlaceCategory.all ||
+              place.category == category,
+        );
+    return places.take(limit).toList();
+  }
 }
 
 class _FailingRepo implements PlaceRepository {
   @override
   Future<List<Place>> fetchPlaces() async => throw Exception('network error');
+
+  @override
+  Future<List<Place>> fetchPopularPlaces({
+    PlaceCategory? category,
+    int limit = 12,
+  }) async => throw Exception('network error');
 }
 
 void main() {
@@ -19,6 +39,12 @@ void main() {
       final provider = HomeProvider(_FakeRepo());
       await Future.delayed(Duration.zero);
       expect(provider.filteredPlaces, isNotEmpty);
+    });
+
+    test('popularPlaces preserves repository popularity order', () async {
+      final provider = HomeProvider(_FakeRepo());
+      await Future.delayed(Duration.zero);
+      expect(provider.popularPlaces.first.id, Place.mockList().last.id);
     });
 
     test('selectPlace sets selectedPlaceId', () async {

@@ -45,7 +45,7 @@ class _PopularZoneListState extends State<PopularZoneList> {
     final selectedId = provider.selectedPlaceId;
     if (selectedId == null) return;
 
-    final places = provider.filteredPlaces;
+    final places = provider.popularPlaces;
     final index = places.indexWhere((p) => p.id == selectedId);
     if (index < 0) return;
 
@@ -63,7 +63,7 @@ class _PopularZoneListState extends State<PopularZoneList> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<HomeProvider>();
-    final places = provider.filteredPlaces;
+    final places = provider.popularPlaces;
 
     return ListView(
       controller: widget.scrollController,

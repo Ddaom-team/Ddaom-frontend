@@ -41,6 +41,7 @@ class HomeProvider extends ChangeNotifier {
 
   PlaceCategory _selectedCategory = PlaceCategory.all;
   List<Place> _allPlaces = [];
+  List<Place> _popularPlaces = [];
   String? selectedPlaceId;
   NaverMapController? mapController;
   bool isLoading = false;
@@ -53,6 +54,8 @@ class HomeProvider extends ChangeNotifier {
     return _allPlaces.where((p) => p.category == _selectedCategory).toList();
   }
 
+  List<Place> get popularPlaces => List.unmodifiable(_popularPlaces);
+
   /// 등록된 전체 장소(중복 등록 검사용 — 카테고리 필터와 무관).
   List<Place> get allPlaces => List.unmodifiable(_allPlaces);
 
@@ -62,6 +65,7 @@ class HomeProvider extends ChangeNotifier {
     notifyListeners();
     try {
       _allPlaces = await _repository.fetchPlaces();
+      await _loadPopularPlacesFor(_selectedCategory);
     } catch (_) {
       error = '장소를 불러오지 못했습니다.';
     } finally {
@@ -74,6 +78,27 @@ class HomeProvider extends ChangeNotifier {
     if (_selectedCategory == category) return;
     _selectedCategory = category;
     notifyListeners();
+    loadPopularPlaces();
+  }
+
+  Future<void> loadPopularPlaces() async {
+    await _loadPopularPlacesFor(_selectedCategory);
+    notifyListeners();
+  }
+
+  Future<void> _loadPopularPlacesFor(PlaceCategory category) async {
+    try {
+      final places = await _repository.fetchPopularPlaces(category: category);
+      if (_selectedCategory == category) {
+        _popularPlaces = places;
+      }
+    } catch (_) {
+      if (_selectedCategory == category) {
+        _popularPlaces = category == PlaceCategory.all
+            ? List.of(_allPlaces)
+            : _allPlaces.where((place) => place.category == category).toList();
+      }
+    }
   }
 
   void selectPlace(String id) {

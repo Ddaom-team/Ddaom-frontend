@@ -53,6 +53,8 @@ class Place {
   final PlaceCategory category;
   final double lat;
   final double lng;
+  final int popularityScore;
+  final int recentPhotoCount;
 
   const Place({
     required this.id,
@@ -63,6 +65,8 @@ class Place {
     required this.category,
     required this.lat,
     required this.lng,
+    this.popularityScore = 0,
+    this.recentPhotoCount = 0,
   });
 
   factory Place.fromJson(Map<String, dynamic> json) => Place(
@@ -74,6 +78,8 @@ class Place {
     category: PlaceCategoryLabel.fromApiString(json['category'] as String?),
     lat: (json['latitude'] as num).toDouble(),
     lng: (json['longitude'] as num).toDouble(),
+    popularityScore: (json['popularityScore'] as num?)?.toInt() ?? 0,
+    recentPhotoCount: (json['recentPhotoCount'] as num?)?.toInt() ?? 0,
   );
 
   static List<Place> mockList() => const [
